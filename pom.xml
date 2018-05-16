@@ -764,6 +764,7 @@
             <properties>
                 <release.tests.args>-Dskip.tests=true</release.tests.args>
                 <skip.tests>true</skip.tests>
+                <run.e2e>true</run.e2e>
             </properties>
         </profile>
         <profile>
@@ -1171,6 +1172,19 @@
                     </plugins>
                 </pluginManagement>
             </build>
+        </profile>
+        <profile>
+            <id>travis_main</id>
+            <properties>
+                <run.e2e>true</run.e2e>
+            </properties>
+        </profile>
+        <profile>
+            <id>travis_e2e</id>
+            <properties>
+                <run.e2e>false</run.e2e>
+                <skip.tests>true</skip.tests>
+            </properties>
         </profile>
     </profiles>
 
@@ -1963,5 +1977,6 @@
         <xerces.version>2.11.0</xerces.version>
         <xmlunit.version>1.6</xmlunit.version>
         <yasson.version>1.0.1</yasson.version>
+        <run.e2e>false</run.e2e>
     </properties>
 </project>
