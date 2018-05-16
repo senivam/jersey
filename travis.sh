@@ -4,4 +4,4 @@ mvn -e -U -B clean install -Ptravis_main -fn 2>&1 | tee jersey-build.log | grep 
 echo '------------------------------------------------------------------------'
 tail -100 jersey-build.log
 cd tests
-mvn -e -U -B test -Ptravis_e2e
+mvn -e -B test -Ptravis_e2e
