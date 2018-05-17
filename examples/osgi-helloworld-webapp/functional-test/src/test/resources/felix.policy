@@ -7,7 +7,6 @@
 //
 // SPDX-License-Identifier: BSD-3-Clause
 //
- 
 allow { [org.osgi.service.condpermadmin.BundleLocationCondition "*System*"] (java.security.AllPermission) } "allToSystem";
 allow { [org.osgi.service.condpermadmin.BundleLocationCondition "*System*"] (org.osgi.framework.AdminPermission) } "adminToSystem";
 allow { [org.osgi.service.condpermadmin.BundleLocationCondition "*System*"] (org.osgi.framework.PackagePermission) } "packageToSystem";
