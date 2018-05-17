@@ -1184,6 +1184,7 @@
             <properties>
                 <run.e2e>false</run.e2e>
                 <skip.tests>true</skip.tests>
+                <skipTests>true</skipTests>
             </properties>
         </profile>
     </profiles>

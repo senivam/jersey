@@ -10,5 +10,9 @@ cache:
 
 install: true
 
+matrix:
+  - TEST_SET="clean install -Ptravis_main"
+  - TEST_SET="clean install -Ptravis_e2e"
+
 script:
-  - bash travis.sh
+  - bash travis.sh $TEST_SET
