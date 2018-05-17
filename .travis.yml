@@ -8,11 +8,11 @@ cache:
     - .autoconf
     - $HOME/.m2
 
-install: true
-
 matrix:
   - TEST_SET=clean install -Ptravis_main
   - TEST_SET=clean install -Ptravis_e2e
+
+install: true
 
 script:
   - bash travis.sh $TEST_SET
