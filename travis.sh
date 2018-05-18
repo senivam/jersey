@@ -26,9 +26,9 @@ bash -c "while true; do echo \$(date) - building ...; sleep $PING_SLEEP; done" &
 PING_LOOP_PID=$!
 
 if [[ $1 == "-Ptravis_e2e" ]]; then
-    mvn -e -U -B clean install $1 2>&1
+    mvn -e -U -B clean install $1 >> $BUILD_OUTPUT 2>&1
 else
-    mvn -e -U -B clean install $1 2>&1 | tee jersey-build.log | grep -E '(---)|(Building)|(Tests run)|(T E S T S)'
+    mvn -e -U -B clean install $1 2>&1 >> $BUILD_OUTPUT 2>&1
 fi
 
 # The build finished without returning an error so dump a tail of the output
