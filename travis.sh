@@ -22,14 +22,10 @@ trap 'error_handler' ERR
 
 # Set up a repeating loop to send some output to Travis.
 
-bash -c "while true; do echo \$(date) - building ...; sleep $PING_SLEEP; done" &
+bash -c "while true; do tail -5 $BUILD_OUTPUT; sleep $PING_SLEEP; done" &
 PING_LOOP_PID=$!
 
-if [[ $1 == "-Ptravis_e2e" ]]; then
-    mvn -e -U -B clean install $1 >> $BUILD_OUTPUT 2>&1
-else
-    mvn -e -U -B clean install $1 2>&1 >> $BUILD_OUTPUT 2>&1
-fi
+mvn -e -U -B clean install $1 >> $BUILD_OUTPUT 2>&1
 
 # The build finished without returning an error so dump a tail of the output
 dump_output
