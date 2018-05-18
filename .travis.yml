@@ -7,10 +7,10 @@ cache:
   directories:
     - .autoconf
     - $HOME/.m2
-
-matrix:
-  - TEST_SET=clean install -Ptravis_main
-  - TEST_SET=clean install -Ptravis_e2e
+env:
+  matrix:
+    - TEST_SET=clean install -Ptravis_main
+    - TEST_SET=clean install -Ptravis_e2e
 
 install: true
 
