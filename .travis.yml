@@ -9,8 +9,8 @@ cache:
     - $HOME/.m2
 env:
   matrix:
-    - TEST_SET="clean install -Ptravis_main"
-    - TEST_SET="clean install -Ptravis_e2e"
+    - TEST_SET="-Ptravis_main"
+    - TEST_SET="-Ptravis_e2e"
 
 install: true
 
