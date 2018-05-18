@@ -6,7 +6,7 @@ LIMIT_PARAMS="| tee jersey-build.log | grep -E '(---)|(Building)|(Tests run)|(T 
 VALIDATION_PARAM="-Ptravis_e2e"
 
 if [[ $1 == "$VALIDATION_PARAM" ]]; then
-    unset $LIMIT_PARAMS
+    LIMIT_PARAMS=''
 fi
 
 mvn -e -U -B clean install $1 2>&1 ${LIMIT_PARAMS}
