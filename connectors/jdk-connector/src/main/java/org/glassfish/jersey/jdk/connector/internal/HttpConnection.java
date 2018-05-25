@@ -127,7 +127,7 @@ class HttpConnection {
         });
     }
 
-    synchronized void close() {
+    void close() {
         if (state == State.CLOSED) {
             return;
         }
