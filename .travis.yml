@@ -1,21 +1,12 @@
-sudo: false
-
 language: java
-
-dist: precise
 
 jdk:
   - oraclejdk8
 
-cache:
-  directories:
-    - .autoconf
-env:
-  matrix:
-    - TEST_SET="-Ptravis_e2e_skip"
-    - TEST_SET="-Ptravis_e2e"
+jobs:
+  include:
+    - stage: build
+      script: bash travis.sh -Ptravis_e2e_skip
+      script: bash travis.sh -Ptravis_e2e
 
 install: true
-
-script:
-  - bash travis.sh $TEST_SET
