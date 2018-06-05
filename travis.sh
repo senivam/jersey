@@ -25,9 +25,7 @@ trap 'error_handler' ERR
 bash -c "while true; do tail -5 $BUILD_OUTPUT; sleep $PING_SLEEP; done" &
 PING_LOOP_PID=$!
 
-    mvn -e -U -B clean install -Ptravis_e2e_skip >> $BUILD_OUTPUT 2>&1
-    cd tests
-    mvn -e -U -B test -Ptravis_e2e >> $BUILD_OUTPUT 2>&1
+mvn -e -U -B clean install >> $BUILD_OUTPUT 2>&1
 
 
 # The build finished without returning an error so dump a tail of the output
