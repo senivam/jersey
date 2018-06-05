@@ -7,7 +7,7 @@ jobs:
   include:
     - stage: build
       script: bash travis.sh -Ptravis_e2e_skip
-    -
+    - stage: test
       script: bash travis.sh -Ptravis_e2e
 
 install: true
