@@ -62,7 +62,7 @@ public class ResponseWriterOutputStreamTest extends JerseyContainerTest {
 
         @POST
         @Produces("text/plain")
-        public void post(final ContainerRequest context) throws IOException {
+        public synchronized void post(final ContainerRequest context) throws IOException {
             assertThat(context.getMethod(), is("POST"));
 
             final String s = context.readEntity(String.class);
