@@ -53,7 +53,7 @@ public class BroadcasterTest extends JerseyTest {
     static final CountDownLatch txLatch = new CountDownLatch(4);
     private static boolean isSingleton = false;
 
-    private static int LATCH_WAIT_TIMEOUT = 64000; //timeout to be waited for asynchronous events to be completed
+    private static int LATCH_WAIT_TIMEOUT = 128000; //timeout to be waited for asynchronous events to be completed
 
     @Path("sse")
     @Singleton
