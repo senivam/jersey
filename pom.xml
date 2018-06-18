@@ -1186,6 +1186,7 @@
             <id>travis_e2e_skip</id>
             <properties>
                 <skip.e2e>true</skip.e2e>
+                <exclude.sse.tests>**/BroadcasterTest*,**/ClientCloseTest*,**/ResponseWriterOutputStreamTest*</exclude.sse.tests>
             </properties>
         </profile>
         <profile>
@@ -1202,6 +1203,21 @@
             <properties>
                 <skip.e2e>false</skip.e2e>
                 <skip.tests>true</skip.tests>
+                <exclude.sse.tests>**/BroadcasterTest*,**/ClientCloseTest*,**/ResponseWriterOutputStreamTest*</exclude.sse.tests>
+            </properties>
+        </profile>
+        <profile>
+            <!--
+             Profile is aimed to run problem tests (which are unstable and it's impossible to predict if they will pass
+             or fail) at the end of the whole Travis CI build process
+
+            the whole build is run as tests/e2e_entity -Ptravis_e2e_unstable
+            -->
+            <id>travis_e2e_no_fail</id>
+            <properties>
+                <skip.e2e>false</skip.e2e>
+                <skip.tests>true</skip.tests>
+                <exclude.sse.tests>none</exclude.sse.tests>
             </properties>
         </profile>
     </profiles>
@@ -1996,5 +2012,6 @@
         <xmlunit.version>1.6</xmlunit.version>
         <yasson.version>1.0.1</yasson.version>
         <skip.e2e>false</skip.e2e>
+        <exclude.sse.tests>none</exclude.sse.tests>
     </properties>
 </project>

@@ -43,7 +43,7 @@ import static junit.framework.TestCase.assertTrue;
  */
 public class ClientCloseTest extends JerseyTest {
 
-    private static final int LATCH_WAIT_TIMEOUT = 62;
+    private static final int LATCH_WAIT_TIMEOUT = 16;
 
     /**
      * The test test that SSE connection is really closed when EventSource.close() is called.
