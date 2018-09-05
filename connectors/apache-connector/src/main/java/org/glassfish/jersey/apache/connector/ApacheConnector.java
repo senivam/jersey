@@ -628,13 +628,7 @@ class ApacheConnector implements Connector {
             }
         }
 
-        return new FilterInputStream(inputStream) {
-            @Override
-            public void close() throws IOException {
-                response.close();
-                super.close();
-            }
-        };
+        return inputStream;
     }
 
     private static class ConnectionFactory extends ManagedHttpClientConnectionFactory {
