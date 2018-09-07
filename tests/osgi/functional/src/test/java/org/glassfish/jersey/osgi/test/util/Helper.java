@@ -151,6 +151,9 @@ public class Helper {
                 // javax.validation
                 mavenBundle().groupId("javax.validation").artifactId("validation-api").versionAsInProject(),
 
+                //JAXB API
+                mavenBundle().groupId("javax.xml.bind").artifactId("jaxb-api").versionAsInProject(),
+
                 // Jersey Grizzly
                 mavenBundle().groupId("org.glassfish.jersey.containers").artifactId("jersey-container-grizzly2-http")
                         .versionAsInProject()

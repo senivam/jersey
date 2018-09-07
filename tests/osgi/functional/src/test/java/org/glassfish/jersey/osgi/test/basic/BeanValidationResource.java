@@ -16,11 +16,13 @@
 
 package org.glassfish.jersey.osgi.test.basic;
 
+import javax.ws.rs.Consumes;
 import javax.ws.rs.FormParam;
 import javax.ws.rs.POST;
 import javax.ws.rs.Path;
 
 import javax.validation.constraints.NotNull;
+import javax.ws.rs.core.MediaType;
 
 /**
  * @author Michal Gajdos
@@ -29,6 +31,7 @@ import javax.validation.constraints.NotNull;
 public class BeanValidationResource {
 
     @POST
+    @Consumes(MediaType.APPLICATION_FORM_URLENCODED)
     public String post(@NotNull @FormParam("formParam") final String formParam) {
         return formParam;
     }
