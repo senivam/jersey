@@ -132,6 +132,9 @@
         <!-- TODO: conflict in ASM version (too old) of jetty plugin -->
         <!--<module>spring4</module>-->
         <module>tracing-support</module>
+        <module>microprofile/config/helidon</module>
+        <module>microprofile/config/smallrye</module>
+        <module>microprofile/config/webapp</module>
     </modules>
 
     <profiles>
