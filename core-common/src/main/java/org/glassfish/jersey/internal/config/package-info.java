@@ -15,8 +15,7 @@
  */
 
 /**
- * Microprofile configuration factory to handle external properties from different
- * MP configs implementations
+ * Configuration factory to handle external properties from different config SPI implementations
  *
  * @since 2.29
  */

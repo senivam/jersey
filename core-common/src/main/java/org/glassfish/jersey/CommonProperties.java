@@ -222,7 +222,7 @@ public final class CommonProperties {
      * Effective if there are no any external properties providers
      *
      * Shall be set (if used) in system properties.
-     * @since 2.9
+     * @since 2.29
      */
 
     public static final String ALLOW_SYSTEM_PROPERTIES_PROVIDER = "jersey.config.allowSystemPropertiesProvider";

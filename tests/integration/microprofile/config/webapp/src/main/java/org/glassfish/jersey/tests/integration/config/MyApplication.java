@@ -16,7 +16,6 @@
 
 package org.glassfish.jersey.tests.integration.config;
 
-import org.glassfish.jersey.internal.config.ExternalPropertiesConfigurationFactory;
 import org.glassfish.jersey.server.ResourceConfig;
 
 import javax.ws.rs.ApplicationPath;
@@ -26,7 +25,6 @@ public class MyApplication
         extends ResourceConfig {
 
     public MyApplication() {
-        ExternalPropertiesConfigurationFactory.getFactory().confiure(this);
         register(new MyResource(this));
     }
 }

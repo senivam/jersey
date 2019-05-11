@@ -48,7 +48,7 @@ public class ExternalPropertiesConfigurationFactoryTest {
 
     @Test
     public void readSystemPropertiesTest() {
-        final ExternalPropertiesConfigurationFactory factory = ExternalPropertiesConfigurationFactory.getFactory();
+        final ExternalPropertiesConfigurationFactoryFeature factory = ExternalPropertiesConfigurationFactoryFeature.getFactory();
         final Object result =
                 factory.readExternalPropertiesMap().get("jersey.config.server.provider.scanning.recursive");
         Assert.assertNull(result);
@@ -64,7 +64,7 @@ public class ExternalPropertiesConfigurationFactoryTest {
 
     @Test(expected = IllegalArgumentException.class)
     public void unsupportedMapperTest() {
-        ExternalPropertiesConfigurationFactory.getFactory()
+        ExternalPropertiesConfigurationFactoryFeature.getFactory()
                 .getConfig().as(CommonProperties.JSON_PROCESSING_FEATURE_DISABLE, Double.class);
     }
 
@@ -73,7 +73,7 @@ public class ExternalPropertiesConfigurationFactoryTest {
         final Map<String, Object> inputProperties = new HashMap<>();
         inputProperties.put("jersey.config.server.provider.scanning.recursive", "MODIFIED");
         inputProperties.put("org.jersey.microprofile.config.added", "ADDED");
-        final ExternalPropertiesConfigurationFactory factory = ExternalPropertiesConfigurationFactory.getFactory();
+        final ExternalPropertiesConfigurationFactoryFeature factory = ExternalPropertiesConfigurationFactoryFeature.getFactory();
         factory.getConfig().mergeProperties(inputProperties);
         final Object result = factory.readExternalPropertiesMap().get("jersey.config.server.provider.scanning.recursive");
         Assert.assertNull(result);

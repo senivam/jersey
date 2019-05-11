@@ -17,6 +17,7 @@
 package org.glassfish.jersey.internal.config;
 
 import org.glassfish.jersey.CommonProperties;
+import org.glassfish.jersey.internal.LocalizationMessages;
 import org.glassfish.jersey.internal.util.PropertiesHelper;
 import org.glassfish.jersey.internal.util.ReflectionHelper;
 import org.glassfish.jersey.spi.ExternalConfigurationModel;
@@ -102,7 +103,7 @@ public class SystemPropertiesConfigurationModel implements ExternalConfiguration
                 CommonProperties.ALLOW_SYSTEM_PROPERTIES_PROVIDER, Boolean.class
         );
         if (!Boolean.TRUE.equals(allowSystemPropertiesProvider)) {
-            log.finer("System properties configuration provider not allowed");
+            log.finer(LocalizationMessages.WARNING_PROPERTIES());
             return result;
         }
 
@@ -110,7 +111,7 @@ public class SystemPropertiesConfigurationModel implements ExternalConfiguration
             AccessController.doPrivileged(PropertiesHelper.getSystemProperties())
                     .forEach((k, v) -> result.put(String.valueOf(k), v));
         } catch (SecurityException se) {
-            log.warning(se.getLocalizedMessage());
+            log.warning(LocalizationMessages.SYSTEM_PROPERTIES_WARNING());
             return getExpectedSystemProperties();
         }
         return result;

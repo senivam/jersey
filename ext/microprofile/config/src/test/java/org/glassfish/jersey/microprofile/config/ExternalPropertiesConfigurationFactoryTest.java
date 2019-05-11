@@ -16,7 +16,6 @@
 
 package org.glassfish.jersey.microprofile.config;
 
-import org.glassfish.jersey.internal.config.ExternalPropertiesConfigurationFactory;
 import org.glassfish.jersey.server.ResourceConfig;
 import org.glassfish.jersey.test.JerseyTest;
 import org.glassfish.jersey.test.jetty.JettyTestContainerFactory;
@@ -25,7 +24,6 @@ import org.glassfish.jersey.test.spi.TestContainerFactory;
 import org.junit.Assert;
 import org.junit.Test;
 
-import javax.inject.Inject;
 import javax.inject.Singleton;
 import javax.ws.rs.GET;
 import javax.ws.rs.Path;
@@ -37,11 +35,12 @@ import javax.ws.rs.core.Response;
 
 public class ExternalPropertiesConfigurationFactoryTest extends JerseyTest {
 
+    private static final ApplicationPropertiesConfig applicationPropertiesConfig = new ApplicationPropertiesConfig();
 
-    public static class ApplicationPropertiesConfig extends ResourceConfig {
+    private static class ApplicationPropertiesConfig extends ResourceConfig {
 
         public ApplicationPropertiesConfig() {
-            register(new MyResource(this));
+            register(MyResource.class);
         }
     }
 
@@ -49,25 +48,19 @@ public class ExternalPropertiesConfigurationFactoryTest extends JerseyTest {
     @Singleton
     public static class MyResource {
 
-        private ApplicationPropertiesConfig parentInstance;
-
-        @Inject
-        public MyResource(ApplicationPropertiesConfig parentInstance) {
-            this.parentInstance = parentInstance;
-        }
 
         @GET
         @Path("readProperty/{key}")
         @Produces(MediaType.APPLICATION_JSON)
         public Response readProperties(@PathParam("key") String key) {
-            return Response.ok(String.valueOf(parentInstance.getProperty(key))).build();
+            return Response.ok(String.valueOf(applicationPropertiesConfig.getProperty(key))).build();
         }
 
         @GET
         @Path("getPropertyValue/{key}")
         @Produces(MediaType.WILDCARD)
         public Boolean getPropertyValue(@PathParam("key") String key) {
-            final Object value = parentInstance.getProperty(key);
+            final Object value = applicationPropertiesConfig.getProperty(key);
             return value == null ? null : Boolean.valueOf(value.toString());
         }
 
@@ -77,11 +70,8 @@ public class ExternalPropertiesConfigurationFactoryTest extends JerseyTest {
     @Override
     protected Application configure() {
 
-        final ApplicationPropertiesConfig config = new ApplicationPropertiesConfig();
-        final ExternalPropertiesConfigurationFactory factory = ExternalPropertiesConfigurationFactory.getFactory();
-        factory.confiure(config);
+        return applicationPropertiesConfig;
 
-        return config;
     }
 
     @Override

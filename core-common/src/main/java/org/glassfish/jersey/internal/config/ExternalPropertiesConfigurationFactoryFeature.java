@@ -22,9 +22,10 @@ import org.glassfish.jersey.spi.ExternalConfigurationProvider;
 
 import javax.annotation.Priority;
 import javax.ws.rs.core.Configurable;
+import javax.ws.rs.core.Feature;
+import javax.ws.rs.core.FeatureContext;
 import java.util.ArrayList;
 import java.util.Collections;
-import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
@@ -37,14 +38,15 @@ import java.util.TreeSet;
  * Offers methods to work with properties loaded from providers or
  * just configure Jersey's Configurables with loaded properties from providers
  */
-public class ExternalPropertiesConfigurationFactory {
+public class ExternalPropertiesConfigurationFactoryFeature implements Feature {
 
-    private ExternalPropertiesConfigurationFactory() {
+    private ExternalPropertiesConfigurationFactoryFeature() {
     }
 
-    private static final ExternalPropertiesConfigurationFactory factory = new ExternalPropertiesConfigurationFactory();
+    private static final ExternalPropertiesConfigurationFactoryFeature factory
+            = new ExternalPropertiesConfigurationFactoryFeature();
 
-    public static ExternalPropertiesConfigurationFactory getFactory() {
+    public static ExternalPropertiesConfigurationFactoryFeature getFactory() {
         return factory;
     }
 
@@ -56,7 +58,7 @@ public class ExternalPropertiesConfigurationFactory {
     public Map<String, Object> readExternalPropertiesMap() {
 
         final ExternalConfigurationProvider provider = mergeConfigs(getExternalConfigurations());
-        return provider == null ? new HashMap<>() : provider.getProperties();
+        return provider == null ? Collections.emptyMap() : provider.getProperties();
     }
 
 
@@ -64,16 +66,25 @@ public class ExternalPropertiesConfigurationFactory {
      * Input Configurable object shall be provided in order to be filled with all found properties
      *
      * @param config Input Configurable initialised object to be filled with properties
+     * @return true if configured false otherwise
      */
-    public void confiure(Configurable config) {
+
+    public boolean configure(Configurable config) {
 
         if (config instanceof ExternalConfigurationModel) {
-            throw new IllegalArgumentException("Config shall not be from external properties");
+            return false; //shall not configure itself
         }
 
         final Map<String, Object> properties = readExternalPropertiesMap();
+
         properties.forEach((k, v) -> config.property(k, v));
 
+        return true;
+    }
+
+    @Override
+    public boolean configure(FeatureContext configurableContext) {
+        return configure((Configurable) configurableContext);
     }
 
     /**

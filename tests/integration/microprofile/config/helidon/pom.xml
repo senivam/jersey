@@ -35,12 +35,19 @@
             <groupId>org.glassfish.jersey.tests.integration</groupId>
             <artifactId>config-webapp</artifactId>
             <version>${project.version}</version>
+            <scope>test</scope>
         </dependency>
-        <!-- <dependency>
+        <dependency>
+            <groupId>org.glassfish.jersey.ext</groupId>
+            <artifactId>config</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
             <groupId>io.helidon.config</groupId>
             <artifactId>helidon-config</artifactId>
             <version>${helidon.version}</version>
-        </dependency>-->
+            <scope>test</scope>
+        </dependency>
         <dependency>
             <groupId>io.helidon.microprofile.config</groupId>
             <artifactId>helidon-microprofile-config</artifactId>
