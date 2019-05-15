@@ -136,6 +136,7 @@
         <module>tracing-support</module>
         <module>microprofile/config/helidon</module>
         <module>microprofile/config/smallrye</module>
+        <module>microprofile/config/tck</module>
         <module>microprofile/config/webapp</module>
     </modules>
 

@@ -1,0 +1,20 @@
+<!DOCTYPE suite SYSTEM "http://testng.org/testng-1.0.dtd" >
+
+<suite name="microprofile-config-TCK" verbose="2" configfailurepolicy="continue" >
+
+    <test name="microprofile-config 1.1 TCK">
+        <classes>
+            <class name="org.eclipse.microprofile.config.tck.CdiOptionalInjectionTest"></class>
+            <class name="org.eclipse.microprofile.config.tck.CDIPlainInjectionTest"></class>
+            <class name="org.eclipse.microprofile.config.tck.ConfigProviderTest"></class>
+            <class name="org.eclipse.microprofile.config.tck.ConverterTest"></class>
+            <class name="org.eclipse.microprofile.config.tck.CustomConfigSourceTest"></class>
+            <class name="org.eclipse.microprofile.config.tck.EmptyValuesTest"></class>
+        </classes>
+        <!--<packages>
+            <package name="org.eclipse.microprofile.config.tck.*">
+            </package>
+        </packages>-->
+    </test>
+
+</suite>
