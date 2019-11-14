@@ -16,18 +16,15 @@
 
 package org.glassfish.jersey.netty.connector;
 
-import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.LinkedBlockingDeque;
 
 import javax.ws.rs.core.Response;
 
 import org.glassfish.jersey.client.ClientRequest;
 import org.glassfish.jersey.client.ClientResponse;
-import org.glassfish.jersey.client.spi.AsyncConnectorCallback;
 import org.glassfish.jersey.netty.connector.internal.NettyInputStream;
 
 import io.netty.buffer.ByteBuf;
@@ -39,8 +36,6 @@ import io.netty.handler.codec.http.HttpObject;
 import io.netty.handler.codec.http.HttpResponse;
 import io.netty.handler.codec.http.HttpUtil;
 import io.netty.handler.codec.http.LastHttpContent;
-import io.netty.util.concurrent.Future;
-import io.netty.util.concurrent.GenericFutureListener;
 
 /**
  * Jersey implementation of Netty channel handler.
@@ -49,19 +44,38 @@ import io.netty.util.concurrent.GenericFutureListener;
  */
 class JerseyClientHandler extends SimpleChannelInboundHandler<HttpObject> {
 
-    private final NettyConnector connector;
-    private final LinkedBlockingDeque<InputStream> isList = new LinkedBlockingDeque<>();
-
-    private final AsyncConnectorCallback asyncConnectorCallback;
     private final ClientRequest jerseyRequest;
-    private final CompletableFuture future;
+    private final CompletableFuture<ClientResponse> responseAvailable;
+    private final CompletableFuture<?> responseDone;
 
-    JerseyClientHandler(NettyConnector nettyConnector, ClientRequest request,
-                        AsyncConnectorCallback callback, CompletableFuture future) {
-        this.connector = nettyConnector;
-        this.asyncConnectorCallback = callback;
+    private NettyInputStream nis;
+    private ClientResponse jerseyResponse;
+
+    JerseyClientHandler(ClientRequest request,
+                        CompletableFuture<ClientResponse> responseAvailable,
+                        CompletableFuture<?> responseDone) {
         this.jerseyRequest = request;
-        this.future = future;
+        this.responseAvailable = responseAvailable;
+        this.responseDone = responseDone;
+    }
+
+    @Override
+    public void channelReadComplete(ChannelHandlerContext ctx) {
+       notifyResponse();
+    }
+
+    @Override
+    public void channelInactive(ChannelHandlerContext ctx) {
+       // assert: no-op, if channel is closed after LastHttpContent has been consumed
+       responseDone.completeExceptionally(new IOException("Stream closed"));
+    }
+
+    protected void notifyResponse() {
+       if (jerseyResponse != null) {
+          ClientResponse cr = jerseyResponse;
+          jerseyResponse = null;
+          responseAvailable.complete(cr);
+       }
     }
 
     @Override
@@ -69,7 +83,7 @@ class JerseyClientHandler extends SimpleChannelInboundHandler<HttpObject> {
         if (msg instanceof HttpResponse) {
             final HttpResponse response = (HttpResponse) msg;
 
-            final ClientResponse jerseyResponse = new ClientResponse(new Response.StatusType() {
+            jerseyResponse = new ClientResponse(new Response.StatusType() {
                 @Override
                 public int getStatusCode() {
                     return response.status().code();
@@ -94,14 +108,10 @@ class JerseyClientHandler extends SimpleChannelInboundHandler<HttpObject> {
             if ((response.headers().contains(HttpHeaderNames.CONTENT_LENGTH) && HttpUtil.getContentLength(response) > 0)
                     || HttpUtil.isTransferEncodingChunked(response)) {
 
-                ctx.channel().closeFuture().addListener(new GenericFutureListener<Future<? super Void>>() {
-                    @Override
-                    public void operationComplete(Future<? super Void> future) throws Exception {
-                        isList.add(NettyInputStream.END_OF_INPUT_ERROR);
-                    }
-                });
+                nis = new NettyInputStream();
+                responseDone.whenComplete((_r, th) -> nis.complete(th));
 
-                jerseyResponse.setEntityStream(new NettyInputStream(isList));
+                jerseyResponse.setEntityStream(nis);
             } else {
                 jerseyResponse.setEntityStream(new InputStream() {
                     @Override
@@ -110,17 +120,6 @@ class JerseyClientHandler extends SimpleChannelInboundHandler<HttpObject> {
                     }
                 });
             }
-
-            if (asyncConnectorCallback != null) {
-                connector.executorService.execute(new Runnable() {
-                    @Override
-                    public void run() {
-                        asyncConnectorCallback.response(jerseyResponse);
-                        future.complete(jerseyResponse);
-                    }
-                });
-            }
-
         }
         if (msg instanceof HttpContent) {
 
@@ -129,30 +128,19 @@ class JerseyClientHandler extends SimpleChannelInboundHandler<HttpObject> {
             ByteBuf content = httpContent.content();
 
             if (content.isReadable()) {
-                // copy bytes - when netty reads last chunk, it automatically closes the channel, which invalidates all
-                // relates ByteBuffs.
-                byte[] bytes = new byte[content.readableBytes()];
-                content.getBytes(content.readerIndex(), bytes);
-                isList.add(new ByteArrayInputStream(bytes));
+                content.retain();
+                nis.publish(content);
             }
 
             if (msg instanceof LastHttpContent) {
-                isList.add(NettyInputStream.END_OF_INPUT);
+                responseDone.complete(null);
+                notifyResponse();
             }
         }
     }
 
     @Override
     public void exceptionCaught(ChannelHandlerContext ctx, final Throwable cause) {
-        if (asyncConnectorCallback != null) {
-            connector.executorService.execute(new Runnable() {
-                @Override
-                public void run() {
-                    asyncConnectorCallback.failure(cause);
-                }
-            });
-        }
-        future.completeExceptionally(cause);
-        isList.add(NettyInputStream.END_OF_INPUT_ERROR);
+        responseDone.completeExceptionally(cause);
     }
 }

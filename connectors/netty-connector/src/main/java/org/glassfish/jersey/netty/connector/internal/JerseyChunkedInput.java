@@ -32,6 +32,7 @@ import io.netty.channel.ChannelFuture;
 import io.netty.channel.ChannelFutureListener;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.handler.stream.ChunkedInput;
+import org.glassfish.jersey.CommonProperties;
 
 /**
  * Netty {@link ChunkedInput} implementation which also serves as an output
@@ -42,10 +43,9 @@ import io.netty.handler.stream.ChunkedInput;
 public class JerseyChunkedInput extends OutputStream implements ChunkedInput<ByteBuf>, ChannelFutureListener {
 
     private static final ByteBuffer VOID = ByteBuffer.allocate(0);
-    private static final int CAPACITY = 8;
-    // TODO this needs to be configurable, see JERSEY-3228
-    private static final int WRITE_TIMEOUT = 10000;
-    private static final int READ_TIMEOUT = 10000;
+    private static final int CAPACITY = Integer.getInteger(CommonProperties.NETTY_CONNECTOR_CAPACITY, 8);
+    private static final int WRITE_TIMEOUT = Integer.getInteger(CommonProperties.NETTY_CONNECTOR_WRITE_TIMEOUT, 10000);
+    private static final int READ_TIMEOUT = Integer.getInteger(CommonProperties.NETTY_CONNECTOR_READ_TIMEOUT, 10000);
 
     private final LinkedBlockingDeque<ByteBuffer> queue = new LinkedBlockingDeque<>(CAPACITY);
     private final Channel ctx;

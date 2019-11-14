@@ -20,6 +20,7 @@ import java.io.IOException;
 import java.io.OutputStream;
 import java.net.InetSocketAddress;
 import java.net.URI;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
@@ -28,11 +29,11 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
-import java.util.concurrent.atomic.AtomicReference;
 
 import javax.ws.rs.ProcessingException;
 import javax.ws.rs.client.Client;
 import javax.ws.rs.core.Configuration;
+import javax.ws.rs.core.MultivaluedHashMap;
 
 import io.netty.bootstrap.Bootstrap;
 import io.netty.channel.Channel;
@@ -76,6 +77,7 @@ class NettyConnector implements Connector {
     final ExecutorService executorService;
     final EventLoopGroup group;
     final Client client;
+    final MultivaluedHashMap<String, Channel> connections = new MultivaluedHashMap<>();
 
     NettyConnector(Client client) {
 
@@ -83,77 +85,92 @@ class NettyConnector implements Connector {
 
         if (threadPoolSize != null && threadPoolSize instanceof Integer && (Integer) threadPoolSize > 0) {
             executorService = Executors.newFixedThreadPool((Integer) threadPoolSize);
+            this.group = new NioEventLoopGroup((Integer) threadPoolSize);
         } else {
             executorService = Executors.newCachedThreadPool();
+            this.group = new NioEventLoopGroup();
         }
 
-        this.group = new NioEventLoopGroup();
         this.client = client;
     }
 
     @Override
     public ClientResponse apply(ClientRequest jerseyRequest) {
-
-        final AtomicReference<ClientResponse> syncResponse = new AtomicReference<>(null);
-        final AtomicReference<Throwable> syncException = new AtomicReference<>(null);
-
         try {
-            Future<?> resultFuture = apply(jerseyRequest, new AsyncConnectorCallback() {
-                @Override
-                public void response(ClientResponse response) {
-                    syncResponse.set(response);
-                }
-
-                @Override
-                public void failure(Throwable failure) {
-                    syncException.set(failure);
-                }
-            });
+            CompletableFuture<ClientResponse> resultFuture = execute(jerseyRequest, new CompletableFuture<>());
 
             Integer timeout = ClientProperties.getValue(jerseyRequest.getConfiguration().getProperties(),
                                                         ClientProperties.READ_TIMEOUT, 0);
 
-            if (timeout != null && timeout > 0) {
-                resultFuture.get(timeout, TimeUnit.MILLISECONDS);
-            } else {
-                resultFuture.get();
-            }
+            return (timeout != null && timeout > 0) ? resultFuture.get(timeout, TimeUnit.MILLISECONDS)
+                                                    : resultFuture.get();
         } catch (ExecutionException ex) {
             Throwable e = ex.getCause() == null ? ex : ex.getCause();
             throw new ProcessingException(e.getMessage(), e);
         } catch (Exception ex) {
             throw new ProcessingException(ex.getMessage(), ex);
         }
-
-        Throwable throwable = syncException.get();
-        if (throwable == null) {
-            return syncResponse.get();
-        } else {
-            throw new RuntimeException(throwable);
-        }
     }
 
     @Override
     public Future<?> apply(final ClientRequest jerseyRequest, final AsyncConnectorCallback jerseyCallback) {
+        CompletableFuture<?> responseDone = new CompletableFuture<>();
+        CompletableFuture<ClientResponse> responseAvailable = execute(jerseyRequest, responseDone);
 
-        final CompletableFuture<Object> settableFuture = new CompletableFuture<>();
+        return responseAvailable.whenComplete((r, th) -> {
+           // assert: a well-behaved app will not block, unless the response has not been read - in which case it may get
+           //         stuck trying to read from a socket this very thread is handling; this is the only good reason to hand
+           //         off processing a well-behaved app to another thread pool
+           // assert: when responseAvailable is completed exceptionally, responseDone is also completed: no need to handle
+           //         exceptional completion of responseAvailable in a special way; corollary: if responseDone is not Done,
+           //         then responseAvailable is completed normally, and can expect only jerseyCallback::response needs
+           //         attaching
+           if (!responseDone.isDone()) {
+              responseAvailable.thenAcceptAsync(jerseyCallback::response, executorService);
+              return;
+           }
+
+           if (th == null) jerseyCallback.response(r);
+           else jerseyCallback.failure(th);
+         });
+    }
+
+    protected CompletableFuture<ClientResponse> execute(final ClientRequest jerseyRequest, CompletableFuture<?> responseDone) {
+        final CompletableFuture<ClientResponse> responseAvailable = new CompletableFuture<>();
 
         final URI requestUri = jerseyRequest.getUri();
         String host = requestUri.getHost();
         int port = requestUri.getPort() != -1 ? requestUri.getPort() : "https".equals(requestUri.getScheme()) ? 443 : 80;
 
         try {
-            Bootstrap b = new Bootstrap();
-            b.group(group)
-             .channel(NioSocketChannel.class)
-             .handler(new ChannelInitializer<SocketChannel>() {
-                 @Override
-                 protected void initChannel(SocketChannel ch) throws Exception {
+            String key = requestUri.getScheme() + "://" + host + ":" + port;
+            List<Channel> conns;
+            synchronized (connections) {
+               conns = connections.get(key);
+               if (conns == null) {
+                  conns = new ArrayList<>(0);
+                  connections.put(key, conns);
+               }
+            }
+
+            Channel chan;
+            synchronized (conns) {
+               chan = conns.size() == 0 ? null : conns.remove(conns.size() - 1);
+            }
+
+            if (chan == null) {
+               Bootstrap b = new Bootstrap();
+               b.group(group)
+                .channel(NioSocketChannel.class)
+                .handler(new ChannelInitializer<SocketChannel>() {
+                    @Override
+                    protected void initChannel(SocketChannel ch) throws Exception {
                      ChannelPipeline p = ch.pipeline();
 
                      // Enable HTTPS if necessary.
                      if ("https".equals(requestUri.getScheme())) {
                          // making client authentication optional for now; it could be extracted to configurable property
+//                         final SslContext sslContext = SslContextBuilder.forClient().clientAuth(ClientAuth.NONE).build();
                          JdkSslContext jdkSslContext = new JdkSslContext(client.getSslContext(), true, ClientAuth.NONE);
                          p.addLast(jdkSslContext.newHandler(ch.alloc()));
                      }
@@ -177,32 +194,47 @@ class NettyConnector implements Connector {
                      p.addLast(new HttpClientCodec());
                      p.addLast(new ChunkedWriteHandler());
                      p.addLast(new HttpContentDecompressor());
-                     p.addLast(new JerseyClientHandler(NettyConnector.this, jerseyRequest, jerseyCallback, settableFuture));
-                 }
-             });
+                    }
+                });
 
-            // connect timeout
-            Integer connectTimeout = ClientProperties.getValue(jerseyRequest.getConfiguration().getProperties(),
-                                                               ClientProperties.CONNECT_TIMEOUT, 0);
-            if (connectTimeout > 0) {
-                b.option(ChannelOption.CONNECT_TIMEOUT_MILLIS, connectTimeout);
+               // connect timeout
+               Integer connectTimeout = ClientProperties.getValue(jerseyRequest.getConfiguration().getProperties(),
+                                                                  ClientProperties.CONNECT_TIMEOUT, 0);
+               if (connectTimeout > 0) {
+                   b.option(ChannelOption.CONNECT_TIMEOUT_MILLIS, connectTimeout);
+               }
+
+               // Make the connection attempt.
+               chan = b.connect(host, port).sync().channel();
             }
 
-            // Make the connection attempt.
-            final Channel ch = b.connect(host, port).sync().channel();
+            // assert: clientHandler will always notify responseDone: either normally, or exceptionally
+            // assert: clientHandler may notify responseAvailable, if sufficient parts of response are detected to construct
+            //         a valid ClientResponse
+            // assert: responseAvailable completion may be racing against responseDone completion
+            // assert: it is ok to abort the entire response, if responseDone is completed exceptionally - in particular, nothing
+            //         will leak
+            final Channel ch = chan;
+            JerseyClientHandler clientHandler = new JerseyClientHandler(jerseyRequest, responseAvailable, responseDone);
+            ch.pipeline().addLast(clientHandler);
 
-            // guard against prematurely closed channel
-            final GenericFutureListener<io.netty.util.concurrent.Future<? super Void>> closeListener =
-                    new GenericFutureListener<io.netty.util.concurrent.Future<? super Void>>() {
-                        @Override
-                        public void operationComplete(io.netty.util.concurrent.Future<? super Void> future) throws Exception {
-                            if (!settableFuture.isDone()) {
-                                settableFuture.completeExceptionally(new IOException("Channel closed."));
-                            }
-                        }
-                    };
+            responseDone.whenComplete((_r, th) -> {
+               ch.pipeline().remove(clientHandler);
 
-            ch.closeFuture().addListener(closeListener);
+               if (th == null) {
+                  synchronized (connections) {
+                     List<Channel> conns1 = connections.get(key);
+                     synchronized (conns1) {
+                        conns1.add(ch);
+                     }
+                  }
+               } else {
+                  ch.close();
+                  // if responseAvailable has been completed, no-op: jersey will encounter IOException while reading response body
+                  // if responseAvailable has not been completed, abort
+                  responseAvailable.completeExceptionally(th);
+               }
+            });
 
             HttpRequest nettyRequest;
 
@@ -225,14 +257,23 @@ class NettyConnector implements Connector {
             nettyRequest.headers().add(HttpHeaderNames.HOST, jerseyRequest.getUri().getHost());
 
             if (jerseyRequest.hasEntity()) {
+                // guard against prematurely closed channel
+                final GenericFutureListener<io.netty.util.concurrent.Future<? super Void>> closeListener =
+                    new GenericFutureListener<io.netty.util.concurrent.Future<? super Void>>() {
+                        @Override
+                        public void operationComplete(io.netty.util.concurrent.Future<? super Void> future) throws Exception {
+                            if (!responseDone.isDone()) {
+                                responseDone.completeExceptionally(new IOException("Channel closed."));
+                            }
+                        }
+                    };
+                ch.closeFuture().addListener(closeListener);
                 if (jerseyRequest.getLengthLong() == -1) {
                     HttpUtil.setTransferEncodingChunked(nettyRequest, true);
                 } else {
                     nettyRequest.headers().add(HttpHeaderNames.CONTENT_LENGTH, jerseyRequest.getLengthLong());
                 }
-            }
 
-            if (jerseyRequest.hasEntity()) {
                 // Send the HTTP request.
                 ch.writeAndFlush(nettyRequest);
 
@@ -259,27 +300,22 @@ class NettyConnector implements Connector {
                         try {
                             jerseyRequest.writeEntity();
                         } catch (IOException e) {
-                            jerseyCallback.failure(e);
-                            settableFuture.completeExceptionally(e);
+                            responseDone.completeExceptionally(e);
                         }
                     }
                 });
 
                 ch.flush();
             } else {
-                // close listener is not needed any more.
-                ch.closeFuture().removeListener(closeListener);
-
                 // Send the HTTP request.
                 ch.writeAndFlush(nettyRequest);
             }
 
         } catch (InterruptedException e) {
-            settableFuture.completeExceptionally(e);
-            return settableFuture;
+            responseDone.completeExceptionally(e);
         }
 
-        return settableFuture;
+        return responseAvailable;
     }
 
     @Override

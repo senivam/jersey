@@ -25,19 +25,16 @@ import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.concurrent.LinkedBlockingDeque;
+import java.util.concurrent.CompletableFuture;
 
 import javax.ws.rs.core.SecurityContext;
 
-import io.netty.buffer.ByteBufInputStream;
 import io.netty.channel.ChannelDuplexHandler;
 import io.netty.channel.ChannelHandler;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.handler.codec.http.HttpRequest;
 import io.netty.handler.codec.http2.Http2DataFrame;
 import io.netty.handler.codec.http2.Http2HeadersFrame;
-import io.netty.util.concurrent.Future;
-import io.netty.util.concurrent.GenericFutureListener;
 import org.glassfish.jersey.internal.PropertiesDelegate;
 import org.glassfish.jersey.netty.connector.internal.NettyInputStream;
 import org.glassfish.jersey.server.ContainerRequest;
@@ -55,8 +52,9 @@ import org.glassfish.jersey.server.internal.ContainerUtils;
 class JerseyHttp2ServerHandler extends ChannelDuplexHandler {
 
     private final URI baseUri;
-    private final LinkedBlockingDeque<InputStream> isList = new LinkedBlockingDeque<>();
     private final NettyHttpContainer container;
+    private final NettyInputStream entityStream = new NettyInputStream();
+    private final CompletableFuture<?> requestDone;
     private final ResourceConfig resourceConfig;
 
     /**
@@ -65,16 +63,20 @@ class JerseyHttp2ServerHandler extends ChannelDuplexHandler {
      * @param baseUri         base {@link URI} of the container (includes context path, if any).
      * @param container       Netty container implementation.
      * @param resourceConfig  the application {@link ResourceConfig}
+     * @param requestDone
      */
-    JerseyHttp2ServerHandler(URI baseUri, NettyHttpContainer container, ResourceConfig resourceConfig) {
+    JerseyHttp2ServerHandler(URI baseUri, NettyHttpContainer container, ResourceConfig resourceConfig,
+                             CompletableFuture<?> requestDone) {
         this.baseUri = baseUri;
         this.container = container;
         this.resourceConfig = resourceConfig;
+        this.requestDone = requestDone;
     }
 
     @Override
     public void exceptionCaught(ChannelHandlerContext ctx, Throwable cause) {
         ctx.close();
+        requestDone.completeExceptionally(cause);
     }
 
     @Override
@@ -92,9 +94,9 @@ class JerseyHttp2ServerHandler extends ChannelDuplexHandler {
      * Process incoming data.
      */
     private void onDataRead(ChannelHandlerContext ctx, Http2DataFrame data) throws Exception {
-        isList.add(new ByteBufInputStream(data.content(), true));
+        entityStream.publish(data.content());
         if (data.isEndStream()) {
-            isList.add(NettyInputStream.END_OF_INPUT);
+            requestDone.complete(null);
         }
     }
 
@@ -160,14 +162,9 @@ class JerseyHttp2ServerHandler extends ChannelDuplexHandler {
         // request entity handling.
         if (!http2Headers.isEndStream()) {
 
-            ctx.channel().closeFuture().addListener(new GenericFutureListener<Future<? super Void>>() {
-                @Override
-                public void operationComplete(Future<? super Void> future) throws Exception {
-                    isList.add(NettyInputStream.END_OF_INPUT_ERROR);
-                }
-            });
+            requestDone.whenComplete((_r, th) -> entityStream.complete(th));
 
-            requestContext.setEntityStream(new NettyInputStream(isList));
+            requestContext.setEntityStream(entityStream);
         } else {
             requestContext.setEntityStream(new InputStream() {
                 @Override

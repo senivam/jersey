@@ -17,7 +17,9 @@
 package org.glassfish.jersey.netty.httpserver;
 
 import java.net.URI;
+import java.util.concurrent.CompletableFuture;
 
+import io.netty.channel.AbstractChannel;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.ChannelInitializer;
 import io.netty.channel.ChannelPipeline;
@@ -41,13 +43,14 @@ import org.glassfish.jersey.server.ResourceConfig;
  *
  * @author Pavel Bucek
  */
-class JerseyServerInitializer extends ChannelInitializer<SocketChannel> {
+class JerseyServerInitializer extends ChannelInitializer<AbstractChannel> {
 
     private final URI baseUri;
     private final SslContext sslCtx;
     private final NettyHttpContainer container;
     private final boolean http2;
     private final ResourceConfig resourceConfig;
+    private final CompletableFuture<?> requestDone = new CompletableFuture<>();
 
     /**
      * Constructor.
@@ -57,7 +60,8 @@ class JerseyServerInitializer extends ChannelInitializer<SocketChannel> {
      * @param container       Netty container implementation.
      * @param resourceConfig  the application {@link ResourceConfig}
      */
-    public JerseyServerInitializer(URI baseUri, SslContext sslCtx, NettyHttpContainer container, ResourceConfig resourceConfig) {
+    public JerseyServerInitializer(URI baseUri, SslContext sslCtx,
+                                   NettyHttpContainer container, ResourceConfig resourceConfig) {
         this(baseUri, sslCtx, container, resourceConfig, false);
     }
 
@@ -70,7 +74,8 @@ class JerseyServerInitializer extends ChannelInitializer<SocketChannel> {
      * @param resourceConfig  the application {@link ResourceConfig}
      * @param http2           Http/2 protocol support.
      */
-    public JerseyServerInitializer(URI baseUri, SslContext sslCtx, NettyHttpContainer container, ResourceConfig resourceConfig,
+    public JerseyServerInitializer(URI baseUri, SslContext sslCtx,
+                                   NettyHttpContainer container, ResourceConfig resourceConfig,
                                    boolean http2) {
         this.baseUri = baseUri;
         this.sslCtx = sslCtx;
@@ -80,7 +85,10 @@ class JerseyServerInitializer extends ChannelInitializer<SocketChannel> {
     }
 
     @Override
-    public void initChannel(SocketChannel ch) {
+    public void initChannel(AbstractChannel ch) {
+        if (!(ch instanceof SocketChannel)) {
+            return;
+        }
         if (http2) {
 
             if (sslCtx != null) {
@@ -96,21 +104,22 @@ class JerseyServerInitializer extends ChannelInitializer<SocketChannel> {
             }
             p.addLast(new HttpServerCodec());
             p.addLast(new ChunkedWriteHandler());
-            p.addLast(new JerseyServerHandler(baseUri, container, resourceConfig));
+            p.addLast(new JerseyServerHandler(baseUri, container, resourceConfig, requestDone));
         }
     }
 
     /**
      * Configure the pipeline for TLS NPN negotiation to HTTP/2.
      */
-    private void configureSsl(SocketChannel ch) {
-        ch.pipeline().addLast(sslCtx.newHandler(ch.alloc()), new HttpVersionChooser(baseUri, container, resourceConfig));
+    private void configureSsl(AbstractChannel ch) {
+        ch.pipeline().addLast(sslCtx.newHandler(ch.alloc()), new HttpVersionChooser(baseUri, container,
+                resourceConfig, requestDone));
     }
 
     /**
      * Configure the pipeline for a cleartext upgrade from HTTP to HTTP/2.
      */
-    private void configureClearText(SocketChannel ch) {
+    private void configureClearText(AbstractChannel ch) {
         final ChannelPipeline p = ch.pipeline();
         final HttpServerCodec sourceCodec = new HttpServerCodec();
 
@@ -120,7 +129,7 @@ class JerseyServerInitializer extends ChannelInitializer<SocketChannel> {
             public HttpServerUpgradeHandler.UpgradeCodec newUpgradeCodec(CharSequence protocol) {
                 if (AsciiString.contentEquals(Http2CodecUtil.HTTP_UPGRADE_PROTOCOL_NAME, protocol)) {
                     return new Http2ServerUpgradeCodec(Http2MultiplexCodecBuilder.forServer(
-                                new JerseyHttp2ServerHandler(baseUri, container, resourceConfig)).build());
+                                new JerseyHttp2ServerHandler(baseUri, container, resourceConfig, requestDone)).build());
                 } else {
                     return null;
                 }
@@ -134,10 +143,15 @@ class JerseyServerInitializer extends ChannelInitializer<SocketChannel> {
 
                 ChannelPipeline pipeline = ctx.pipeline();
                 ChannelHandlerContext thisCtx = pipeline.context(this);
-                pipeline.addAfter(thisCtx.name(), null, new JerseyServerHandler(baseUri, container, resourceConfig));
+                pipeline.addAfter(thisCtx.name(), null, new JerseyServerHandler(baseUri, container,
+                        resourceConfig, requestDone));
                 pipeline.replace(this, null, new ChunkedWriteHandler());
                 ctx.fireChannelRead(msg);
             }
         });
+    }
+
+    NettyHttpContainer getContainer() {
+        return container;
     }
 }

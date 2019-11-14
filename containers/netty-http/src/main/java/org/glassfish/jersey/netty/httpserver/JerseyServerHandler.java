@@ -22,10 +22,10 @@ import java.net.URI;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.LinkedBlockingDeque;
 
 import io.netty.buffer.ByteBuf;
-import io.netty.buffer.ByteBufInputStream;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.ChannelInboundHandlerAdapter;
 import io.netty.handler.codec.http.DefaultFullHttpResponse;
@@ -36,8 +36,6 @@ import io.netty.handler.codec.http.HttpResponseStatus;
 import io.netty.handler.codec.http.HttpUtil;
 import io.netty.handler.codec.http.HttpVersion;
 import io.netty.handler.codec.http.LastHttpContent;
-import io.netty.util.concurrent.Future;
-import io.netty.util.concurrent.GenericFutureListener;
 import org.glassfish.jersey.internal.PropertiesDelegate;
 import org.glassfish.jersey.netty.connector.internal.NettyInputStream;
 import org.glassfish.jersey.server.ContainerRequest;
@@ -56,6 +54,8 @@ class JerseyServerHandler extends ChannelInboundHandlerAdapter {
     private final LinkedBlockingDeque<InputStream> isList = new LinkedBlockingDeque<>();
     private final NettyHttpContainer container;
     private final ResourceConfig resourceConfig;
+    private final NettyInputStream entityStream = new NettyInputStream();
+    private final CompletableFuture<?> requestDone;
 
     /**
      * Constructor.
@@ -64,10 +64,14 @@ class JerseyServerHandler extends ChannelInboundHandlerAdapter {
      * @param container Netty container implementation.
      * @param resourceConfig  the application {@link ResourceConfig}
      */
-    public JerseyServerHandler(URI baseUri, NettyHttpContainer container, ResourceConfig resourceConfig) {
+    public JerseyServerHandler(URI baseUri,
+                               NettyHttpContainer container,
+                               ResourceConfig resourceConfig,
+                               CompletableFuture<?> requestDone) {
         this.baseUri = baseUri;
         this.container = container;
         this.resourceConfig = resourceConfig;
+        this.requestDone = requestDone;
     }
 
     @Override
@@ -95,16 +99,17 @@ class JerseyServerHandler extends ChannelInboundHandlerAdapter {
         }
 
         if (msg instanceof HttpContent) {
-            HttpContent httpContent = (HttpContent) msg;
+            final HttpContent httpContent = (HttpContent) msg;
 
-            ByteBuf content = httpContent.content();
+            final ByteBuf content = httpContent.content();
 
             if (content.isReadable()) {
-                isList.add(new ByteBufInputStream(content, true));
+                content.retain();
+                entityStream.publish(content);
             }
 
             if (msg instanceof LastHttpContent) {
-                isList.add(NettyInputStream.END_OF_INPUT);
+                requestDone.complete(null);
             }
         }
     }
@@ -152,14 +157,9 @@ class JerseyServerHandler extends ChannelInboundHandlerAdapter {
         if ((req.headers().contains(HttpHeaderNames.CONTENT_LENGTH) && HttpUtil.getContentLength(req) > 0)
                 || HttpUtil.isTransferEncodingChunked(req)) {
 
-            ctx.channel().closeFuture().addListener(new GenericFutureListener<Future<? super Void>>() {
-                @Override
-                public void operationComplete(Future<? super Void> future) throws Exception {
-                    isList.add(NettyInputStream.END_OF_INPUT_ERROR);
-                }
-            });
+            requestDone.whenComplete((_r, th) -> entityStream.complete(th));
 
-            requestContext.setEntityStream(new NettyInputStream(isList));
+            requestContext.setEntityStream(entityStream);
         } else {
             requestContext.setEntityStream(new InputStream() {
                 @Override
@@ -183,7 +183,11 @@ class JerseyServerHandler extends ChannelInboundHandlerAdapter {
 
     @Override
     public void exceptionCaught(ChannelHandlerContext ctx, Throwable cause) {
-        ctx.close();
+        requestDone.completeExceptionally(cause);
     }
 
+    @Override
+    public void channelInactive(ChannelHandlerContext ctx) throws Exception {
+        requestDone.completeExceptionally(new IOException("Connection failed"));
+    }
 }

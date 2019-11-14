@@ -16,9 +16,12 @@
 
 package org.glassfish.jersey.netty.connector.internal;
 
-import java.io.IOException;
 import java.io.InputStream;
-import java.util.concurrent.LinkedBlockingDeque;
+import java.io.IOException;
+import java.nio.ByteBuffer;
+import java.util.ArrayDeque;
+
+import io.netty.buffer.ByteBuf;
 
 /**
  * Input stream which servers as Request entity input.
@@ -31,102 +34,115 @@ import java.util.concurrent.LinkedBlockingDeque;
 public class NettyInputStream extends InputStream {
 
     private volatile boolean end = false;
+    private Throwable cause;
 
-    /**
-     * End of input.
-     */
-    public static final InputStream END_OF_INPUT = new InputStream() {
-        @Override
-        public int read() throws IOException {
-            return 0;
-        }
+    private final ArrayDeque<ByteBuf> byteBufDeque;
+    private ByteBuf current;
+    private ByteBuffer buffer;
 
-        @Override
-        public String toString() {
-            return "END_OF_INPUT " + super.toString();
-        }
-    };
+    private final byte[] ONE_BYTE = new byte[1];
+    private boolean reading;
 
-    /**
-     * Unexpected end of input.
-     */
-    public static final InputStream END_OF_INPUT_ERROR = new InputStream() {
-        @Override
-        public int read() throws IOException {
-            return 0;
-        }
-
-        @Override
-        public String toString() {
-            return "END_OF_INPUT_ERROR " + super.toString();
-        }
-    };
-
-    private final LinkedBlockingDeque<InputStream> isList;
-
-    public NettyInputStream(LinkedBlockingDeque<InputStream> isList) {
-        this.isList = isList;
-    }
-
-    private interface ISReader {
-        int readFrom(InputStream take) throws IOException;
-    }
-
-    private int readInternal(ISReader isReader) throws IOException {
-        if (end) {
-            return -1;
-        }
-
-        InputStream take;
-        try {
-            take = isList.take();
-
-            if (checkEndOfInput(take)) {
-                return -1;
-            }
-
-            int read = isReader.readFrom(take);
-
-            if (take.available() > 0) {
-                isList.addFirst(take);
-            } else {
-                take.close();
-            }
-
-            return read;
-        } catch (InterruptedException e) {
-            throw new IOException("Interrupted.", e);
-        }
+    public NettyInputStream() {
+        this.byteBufDeque = new ArrayDeque<>();
     }
 
     @Override
     public int read(byte[] b, int off, int len) throws IOException {
-        return readInternal(take -> take.read(b, off, len));
+       if (current == null) {
+          buffer = awaitNext();
+          if (buffer == null) {
+             // assert: end is true
+             if (cause == null) {
+                return -1;
+             }
+
+             throw new IOException(cause);
+          }
+       }
+
+       int rem = buffer.remaining();
+       if (rem < len) {
+          len = rem;
+       }
+       buffer.get(b, off, len);
+       if (rem == len) {
+          current.release();
+          current = null;
+          buffer = null;
+       }
+
+       return len;
     }
 
     @Override
     public int read() throws IOException {
-        return readInternal(InputStream::read);
+       int r = read(ONE_BYTE, 0, 1);
+       if (r < 0) {
+          return r;
+       }
+
+       return ONE_BYTE[0] & 0xff;
     }
 
     @Override
-    public int available() throws IOException {
-        InputStream peek = isList.peek();
-        if (peek != null) {
-            return peek.available();
-        }
+    public synchronized void close() {
+       if (current != null) {
+          current.release();
+       }
 
-        return 0;
+       current = null;
+       buffer = null;
+       cleanup(true);
     }
 
-    private boolean checkEndOfInput(InputStream take) throws IOException {
-        if (take == END_OF_INPUT) {
-            end = true;
-            return true;
-        } else if (take == END_OF_INPUT_ERROR) {
-            end = true;
-            throw new IOException("Connection was closed prematurely.");
-        }
-        return false;
+    protected synchronized ByteBuffer awaitNext() {
+       while (byteBufDeque.isEmpty()) {
+          if (end) {
+             return null;
+          }
+
+          try {
+             reading = true;
+             wait();
+             reading = false;
+          } catch (InterruptedException ie) {
+             // waiting uninterruptibly
+          }
+       }
+
+       current = byteBufDeque.poll();
+       return current.nioBuffer().asReadOnlyBuffer();
+    }
+
+    public synchronized void complete(Throwable cause) {
+       this.cause = cause;
+       cleanup(cause != null);
+    }
+
+    protected void cleanup(boolean drain) {
+       if (drain) {
+          while (!byteBufDeque.isEmpty()) {
+             byteBufDeque.poll().release();
+          }
+       }
+
+       end = true;
+
+       if (reading) {
+          notifyAll();
+       }
+    }
+
+    public synchronized void publish(ByteBuf content) {
+       if (end || content.nioBuffer().remaining() == 0) {
+          content.release();
+          return;
+       }
+
+       byteBufDeque.add(content);
+       if (reading) {
+          notifyAll();
+       }
     }
 }

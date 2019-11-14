@@ -227,6 +227,28 @@ public final class CommonProperties {
 
     public static final String ALLOW_SYSTEM_PROPERTIES_PROVIDER = "jersey.config.allowSystemPropertiesProvider";
 
+
+    /**
+     * Allows configuration for read timeout in netty
+     *
+     * @since 2.30
+     */
+    public static final String NETTY_CONNECTOR_READ_TIMEOUT = "jersey.config.connector.netty.read.timeout";
+
+
+    /**
+     * Allows configuration for write timeout in netty
+     *
+     * @since 2.30
+     */
+    public static final String NETTY_CONNECTOR_WRITE_TIMEOUT = "jersey.config.connector.netty.write.timeout";
+
+    /**
+     * Allows configuration for netty streams queue default capacity
+     *
+     * @since 2.30
+     */
+    public static final String NETTY_CONNECTOR_CAPACITY = "jersey.config.connector.netty.capacity";
     /**
      * Prevent instantiation.
      */

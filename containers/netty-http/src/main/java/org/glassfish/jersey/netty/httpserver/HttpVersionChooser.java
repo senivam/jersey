@@ -17,6 +17,7 @@
 package org.glassfish.jersey.netty.httpserver;
 
 import java.net.URI;
+import java.util.concurrent.CompletableFuture;
 
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.handler.codec.http.HttpServerCodec;
@@ -36,30 +37,32 @@ class HttpVersionChooser extends ApplicationProtocolNegotiationHandler {
     private final URI baseUri;
     private final NettyHttpContainer container;
     private final ResourceConfig resourceConfig;
+    private final CompletableFuture<?> requestDone;
 
-    HttpVersionChooser(URI baseUri, NettyHttpContainer container, ResourceConfig resourceConfig) {
+    HttpVersionChooser(URI baseUri, NettyHttpContainer container, ResourceConfig resourceConfig,
+                       CompletableFuture<?> requestDone) {
         super(ApplicationProtocolNames.HTTP_1_1);
 
         this.baseUri = baseUri;
         this.container = container;
         this.resourceConfig = resourceConfig;
+        this.requestDone = requestDone;
     }
 
     @Override
     protected void configurePipeline(ChannelHandlerContext ctx, String protocol) throws Exception {
-        if (ApplicationProtocolNames.HTTP_2.equals(protocol)) {
-            ctx.pipeline().addLast(Http2MultiplexCodecBuilder.forServer(
-                        new JerseyHttp2ServerHandler(baseUri, container, resourceConfig)).build());
-            return;
+        switch (protocol) {
+            case ApplicationProtocolNames.HTTP_2:
+                ctx.pipeline().addLast(Http2MultiplexCodecBuilder.forServer(
+                        new JerseyHttp2ServerHandler(baseUri, container, resourceConfig, requestDone)).build());
+                return;
+            case ApplicationProtocolNames.HTTP_1_1:
+                ctx.pipeline().addLast(new HttpServerCodec(),
+                        new ChunkedWriteHandler(),
+                        new JerseyServerHandler(baseUri, container, resourceConfig, requestDone));
+                return;
+            default:
+                throw new IllegalStateException(String.format("Unknown protocol: %s", protocol));
         }
-
-        if (ApplicationProtocolNames.HTTP_1_1.equals(protocol)) {
-            ctx.pipeline().addLast(new HttpServerCodec(),
-                                   new ChunkedWriteHandler(),
-                                   new JerseyServerHandler(baseUri, container, resourceConfig));
-            return;
-        }
-
-        throw new IllegalStateException("Unknown protocol: " + protocol);
     }
 }
