@@ -530,7 +530,7 @@ public class JerseyInvocation implements jakarta.ws.rs.client.Invocation {
         }
     }
 
-    /* package */ static class AsyncInvoker extends CompletableFutureAsyncInvoker implements javax.ws.rs.client.AsyncInvoker {
+    /* package */ static class AsyncInvoker extends CompletableFutureAsyncInvoker implements jakarta.ws.rs.client.AsyncInvoker {
 
         private final JerseyInvocation.Builder builder;
 
