@@ -27,8 +27,8 @@ import java.util.LinkedHashSet;
 import java.util.Set;
 import java.util.logging.Logger;
 
-import javax.ws.rs.Path;
-import javax.ws.rs.ext.Provider;
+import jakarta.ws.rs.Path;
+import jakarta.ws.rs.ext.Provider;
 
 import jersey.repackaged.org.objectweb.asm.RecordComponentVisitor;
 import org.glassfish.jersey.internal.OsgiRegistry;
@@ -71,10 +71,10 @@ public final class AnnotationAcceptingListener implements ResourceProcessor {
 
     /**
      * Create a scanning listener to check for Java classes in Java
-     * class files annotated with {@link javax.ws.rs.Path} or {@link javax.ws.rs.ext.Provider}.
+     * class files annotated with {@link jakarta.ws.rs.Path} or {@link jakarta.ws.rs.ext.Provider}.
      *
      * @return new instance of {@link AnnotationAcceptingListener} which looks for
-     * {@link javax.ws.rs.Path} or {@link javax.ws.rs.ext.Provider} annotated classes.
+     * {@link jakarta.ws.rs.Path} or {@link jakarta.ws.rs.ext.Provider} annotated classes.
      *
      */
     @SuppressWarnings({"unchecked"})
@@ -89,7 +89,7 @@ public final class AnnotationAcceptingListener implements ResourceProcessor {
      * @param classLoader the class loader to use to load Java classes that
      *        are annotated with any one of the annotations.
      * @return new instance of {@link AnnotationAcceptingListener} which looks for
-     * {@link javax.ws.rs.Path} or {@link javax.ws.rs.ext.Provider} annotated classes.
+     * {@link jakarta.ws.rs.Path} or {@link jakarta.ws.rs.ext.Provider} annotated classes.
      */
     @SuppressWarnings({"unchecked"})
     public static AnnotationAcceptingListener newJaxrsResourceAndProviderListener(final ClassLoader classLoader) {
