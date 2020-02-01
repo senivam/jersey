@@ -252,7 +252,7 @@ class JettyConnector implements Connector {
             HeaderUtils.checkHeaderChanges(clientHeadersSnapshot, jerseyRequest.getHeaders(),
                                            JettyConnector.this.getClass().getName(), jerseyRequest.getConfiguration());
 
-            final javax.ws.rs.core.Response.StatusType status = jettyResponse.getReason() == null
+            final jakarta.ws.rs.core.Response.StatusType status = jettyResponse.getReason() == null
                     ? Statuses.from(jettyResponse.getStatus())
                     : Statuses.from(jettyResponse.getStatus(), jettyResponse.getReason());
 

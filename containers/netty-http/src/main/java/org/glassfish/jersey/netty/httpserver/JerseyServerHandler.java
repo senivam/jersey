@@ -21,8 +21,8 @@ import java.util.Collection;
 import java.util.HashMap;
 import java.util.Map;
 
-import javax.ws.rs.core.Response.Status;
-import javax.ws.rs.core.MediaType;
+import jakarta.ws.rs.core.Response.Status;
+import jakarta.ws.rs.core.MediaType;
 
 import io.netty.buffer.ByteBuf;
 import io.netty.channel.ChannelHandlerContext;
@@ -88,7 +88,7 @@ class JerseyServerHandler extends ChannelInboundHandlerAdapter {
             long contentLength = req.headers().contains(HttpHeaderNames.CONTENT_LENGTH) ? HttpUtil.getContentLength(req)
                     : -1L;
             if (contentLength >= MAX_REQUEST_ENTITY_BYTES) {
-                requestContext.abortWith(javax.ws.rs.core.Response.status(Status.REQUEST_ENTITY_TOO_LARGE).build());
+                requestContext.abortWith(jakarta.ws.rs.core.Response.status(Status.REQUEST_ENTITY_TOO_LARGE).build());
             } else {
                 /**
                  * Jackson JSON decoder tries to read a minimum of 2 bytes (4
