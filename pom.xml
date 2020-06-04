@@ -1110,6 +1110,29 @@
             </repositories>
         </profile>
         <profile>
+            <id>jetty-snapshot</id>
+            <repositories>
+                <repository>
+                    <id>jetty.snapshot.repository</id>
+                    <name>Jetty Snapshots Maven Repository</name>
+                    <url>https://oss.sonatype.org/content/repositories/jetty-snapshots</url>
+                    <layout>default</layout>
+                    <snapshots>
+                        <enabled>true</enabled>
+                    </snapshots>
+                </repository>
+            </repositories>
+            <pluginRepositories>
+                <pluginRepository>
+                    <id>jetty-plugin.snapshot.repository</id>
+                    <url>https://oss.sonatype.org/content/repositories/jetty-snapshots/</url>
+                    <snapshots>
+                        <enabled>true</enabled>
+                    </snapshots>
+                </pluginRepository>
+            </pluginRepositories>
+        </profile>
+        <profile>
             <id>securityOff</id>
             <properties>
                 <surefire.security.argline />
@@ -1649,11 +1672,6 @@
                 <artifactId>jetty-webapp</artifactId>
                 <version>${jetty.version}</version>
             </dependency>
-            <dependency>
-                <groupId>org.eclipse.jetty</groupId>
-                <artifactId>jetty-continuation</artifactId>
-                <version>${jetty.version}</version>
-            </dependency>
 
             <dependency>
                 <groupId>org.simpleframework</groupId>
@@ -2160,7 +2178,7 @@
         <javax.annotation.version>1.3.5</javax.annotation.version> <!--Deprecated, used only for @generated annotation in perf tests -->
 
         <jetty.plugin.version>6.1.26</jetty.plugin.version>
-        <jetty.version>9.4.27.v20200227</jetty.version>
+        <jetty.version>11.0.0-SNAPSHOT</jetty.version>
         <jetty.servlet.api.25.version>6.1.14</jetty.servlet.api.25.version>
 
         <mimepull.version>1.9.13</mimepull.version>
