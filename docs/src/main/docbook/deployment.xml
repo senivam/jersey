@@ -1316,7 +1316,7 @@ Bundle ID: 303</programlisting>
                 or install it directly from the maven repository:
 
                 <programlisting language="bash shell" linenumbering="numbered">
-gogo$ install http://central.maven.org/maven2/org/glassfish/jersey/examples/osgi-http-service/bundle/&lt;version&gt;/bundle-&lt;version&gt;.jar
+gogo$ install https://repo1.maven.org/maven2/org/glassfish/jersey/examples/osgi-http-service/bundle/&lt;version&gt;/bundle-&lt;version&gt;.jar
 Bundle ID: 303</programlisting>
             </para>
 
