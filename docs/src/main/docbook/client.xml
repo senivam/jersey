@@ -31,7 +31,7 @@
 
     <para>
         This section introduces the JAX-RS Client API, which is a fluent Java based API for communication with RESTful Web
-        services. This standard API that is also part of Java EE 7 is designed to make it very easy to consume a Web service
+        services. This standard API that is also part of Java EE 9 is designed to make it very easy to consume a Web service
         exposed via HTTP protocol and enables developers to concisely and efficiently implement portable client-side solutions
         that leverage existing and well established client-side HTTP connector implementations.
     </para>
@@ -746,7 +746,7 @@ Client client = ClientBuilder.newClient(clientConfig);</programlisting>
             into the &lit.jersey.client.ClientConfig;. The &lit.jersey.grizzly.GrizzlyConnectorProvider; is used as a custom
             connector provider in the example above. Please note that the connector provider cannot be registered as a provider
             using &lit.jaxrs.core.Configurable;<literal>.register(...)</literal>. Also, please note that in this API has changed
-            in Jersey 2.5, where the &lit.jersey.client.ConnectorProvider; SPI has been introduced in order to decouple client
+            since Jersey 2.5, where the &lit.jersey.client.ConnectorProvider; SPI has been introduced in order to decouple client
             initialization from the connector instantiation. Starting with Jersey 2.5 it is therefore not possible to directly
             register &lit.jersey.client.Connector; instances in the Jersey &jersey.client.ClientConfig;. The new
             &lit.jersey.client.ConnectorProvider; SPI must be used instead to configure a custom client-side transport connector.

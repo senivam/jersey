@@ -1082,11 +1082,11 @@ public static class SubResource {
         </para>
 
         <para>When deploying a JAX-RS application using servlet then
-            <link xlink:href="http://docs.oracle.com/javaee/5/api/javax/servlet/ServletConfig.html">ServletConfig</link>,
-            <link xlink:href="http://docs.oracle.com/javaee/5/api/javax/servlet/ServletContext.html">ServletContext</link>,
-            <link xlink:href="http://docs.oracle.com/javaee/5/api/javax/servlet/http/HttpServletRequest.html">HttpServletRequest</link>
+            <link xlink:href="https://jakarta.ee/specifications/servlet/5.0/apidocs/jakarta/servlet/ServletConfig.html">ServletConfig</link>,
+            <link xlink:href="https://jakarta.ee/specifications/servlet/5.0/apidocs/jakarta/servlet/ServletContext.html">ServletContext</link>,
+            <link xlink:href="https://jakarta.ee/specifications/servlet/5.0/apidocs/jakarta/servlet/http/HttpServletRequest.html">HttpServletRequest</link>
             and
-            <link xlink:href="http://docs.oracle.com/javaee/5/api/javax/servlet/http/HttpServletResponse.html">HttpServletResponse</link>
+            <link xlink:href="https://jakarta.ee/specifications/servlet/5.0/apidocs/jakarta/servlet/http/HttpServletResponse.html">HttpServletResponse</link>
             are available using &jaxrs.core.Context;.
         </para>
     </section>
