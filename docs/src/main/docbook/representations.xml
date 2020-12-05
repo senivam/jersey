@@ -49,7 +49,7 @@
 				<listitem><literal>java.lang.String</literal></listitem>
 				<listitem><literal>java.io.Reader</literal> (inbound only)</listitem>
 				<listitem><literal>java.io.File</literal></listitem>
-				<listitem><literal>javax.activation.DataSource</literal></listitem>
+				<listitem><literal>jakarta.activation.DataSource</literal></listitem>
 				<listitem><literal>jakarta.ws.rs.core.StreamingOutput</literal> (outbound only)</listitem>
             		</itemizedlist>
 		</listitem>

@@ -132,12 +132,12 @@
 <!ENTITY hk2.ServiceLocator "<link xlink:href='&hk2.javadoc.uri;/org/glassfish/hk2/api/ServiceLocator.html'>ServiceLocator</link>">
 
 <!-- RxJava -->
-<!ENTITY rxjava.Observable "<link xlink:href='&rxjava.javadoc.uri;/rx/Observable.html'>Observable</link>">
-<!ENTITY rxjava.Observable.onserveOn "<link xlink:href='&rxjava.javadoc.uri;/rx/Observable.html#observeOn(rx.Scheduler)'>Observable#observeOn(rx.Scheduler)</link>">
-<!ENTITY rxjava.Observable.subscribeOn "<link xlink:href='&rxjava.javadoc.uri;/rx/Observable.html#subscribeOn(rx.Scheduler)'>Observable#subscribeOn(rx.Scheduler)</link>">
-<!ENTITY rxjava.Scheduler "<link xlink:href='&rxjava.javadoc.uri;/rx/Scheduler.html'>Scheduler</link>">
+<!ENTITY rxjava.Observable "<link xlink:href='&rxjava.javadoc.uri;/io/reactivex/Observable.html'>Observable</link>">
+<!ENTITY rxjava.Observable.onserveOn "<link xlink:href='&rxjava.javadoc.uri;/io/reactivex/Observable.html#observeOn-io.reactivex.Scheduler-'>Observable#observeOn(rx.Scheduler)</link>">
+<!ENTITY rxjava.Observable.subscribeOn "<link xlink:href='&rxjava.javadoc.uri;/io/reactivex/Observable.html#subscribeOn-io.reactivex.Scheduler-'>Observable#subscribeOn(rx.Scheduler)</link>">
+<!ENTITY rxjava.Scheduler "<link xlink:href='&rxjava.javadoc.uri;/io/reactivex/Scheduler.html'>Scheduler</link>">
 
-<!ENTITY rxjava2.Flowable "<link xlink:href='&rxjava.javadoc.uri;/rx/Flowable.html'>Flowable</link>">
+<!ENTITY rxjava2.Flowable "<link xlink:href='&rxjava.javadoc.uri;/io/reactivex/Flowable.html'>Flowable</link>">
 
 <!ENTITY jsr166e.CompletableFuture "<link xlink:href='&jsr166.javadoc.uri;/jsr166e/CompletableFuture.html'>CompletableFuture</link>">
 <!ENTITY jsr166e.ForkJoinPool.commonPool "<link xlink:href='&jsr166.javadoc.uri;/jsr166e/ForkJoinPool.html#commonPool()'>ForkJoinPool.html#commonPool()</link>">
