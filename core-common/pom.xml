@@ -83,8 +83,6 @@
                 <artifactId>maven-compiler-plugin</artifactId>
                 <inherited>false</inherited>
                 <configuration>
-                    <source>${java.version}</source>
-                    <target>${java.version}</target>
                     <compilerArguments>
                         <!-- Do not warn about using sun.misc.Unsafe -->
                         <XDignore.symbol.file />
@@ -201,6 +199,13 @@
             <groupId>org.osgi</groupId>
             <artifactId>org.osgi.core</artifactId>
             <scope>provided</scope>
+            <optional>true</optional>
+        </dependency>
+        <dependency>
+            <groupId>jakarta.xml.bind</groupId>
+            <artifactId>jakarta.xml.bind-api</artifactId>
+            <scope>provided</scope>
+            <optional>true</optional>
         </dependency>
         <dependency>
             <groupId>jakarta.inject</groupId>
