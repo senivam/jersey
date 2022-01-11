@@ -175,8 +175,6 @@
                             <compilerArgs>
                                 <arg>--add-reads</arg>
                                 <arg>org.glassfish.jersey.core.server=ALL-UNNAMED</arg>
-                                <arg>--add-opens</arg>
-                                <arg>jakarta.xml.bind/jakarta.xml.bind=ALL-UNNAMED</arg>
                             </compilerArgs>
                         </configuration>
                     </execution>
@@ -249,7 +247,7 @@
         </dependency>
         <dependency>
             <groupId>org.hamcrest</groupId>
-            <artifactId>hamcrest-library</artifactId>
+            <artifactId>hamcrest</artifactId>
             <scope>test</scope>
         </dependency>
 
