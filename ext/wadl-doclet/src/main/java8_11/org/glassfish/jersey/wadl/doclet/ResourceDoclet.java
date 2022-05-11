@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010, 2020 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2010, 2022 Oracle and/or its affiliates. All rights reserved.
  *
  * This program and the accompanying materials are made available under the
  * terms of the Eclipse Public License v. 2.0, which is available at
@@ -16,13 +16,7 @@
 
 package org.glassfish.jersey.wadl.doclet;
 
-import java.io.BufferedOutputStream;
 import java.io.File;
-import java.io.FileOutputStream;
-import java.io.OutputStream;
-import java.io.StringWriter;
-import java.lang.reflect.Array;
-import java.lang.reflect.Field;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.net.URLClassLoader;
@@ -51,9 +45,6 @@ import org.glassfish.jersey.server.wadl.internal.generators.resourcedoc.model.Re
 import org.glassfish.jersey.server.wadl.internal.generators.resourcedoc.model.ResourceDocType;
 import org.glassfish.jersey.server.wadl.internal.generators.resourcedoc.model.ResponseDocType;
 import org.glassfish.jersey.server.wadl.internal.generators.resourcedoc.model.WadlParamType;
-
-import org.apache.xml.serialize.OutputFormat;
-import org.apache.xml.serialize.XMLSerializer;
 
 import com.sun.javadoc.AnnotationDesc;
 import com.sun.javadoc.AnnotationDesc.ElementValuePair;
