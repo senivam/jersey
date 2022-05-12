@@ -67,6 +67,9 @@
                 <configuration>
                     <show>package</show>
 		            <detectJavaApiLink>false</detectJavaApiLink>
+                    <detectLinks>false</detectLinks>
+                    <detectOfflineLinks>false</detectOfflineLinks>
+                    <source>8</source>
                 </configuration>
             </plugin>
         </plugins>
