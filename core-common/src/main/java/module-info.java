@@ -17,15 +17,14 @@
 module org.glassfish.jersey.core.common {
     requires transitive jakarta.ws.rs;
     requires transitive jakarta.inject;
-    requires static jakarta.xml.bind;
-    requires static jakarta.activation;
-    requires jakarta.annotation;
-    requires java.logging;
-    requires java.desktop;
+    requires transitive jakarta.annotation;
+    requires transitive jakarta.activation;
 
-    // Filename-based auto-modules
+    requires transitive java.logging;
+    requires transitive java.desktop;
+
     requires static org.osgi.core;
-    requires osgi.resource.locator;
+    requires static osgi.resource.locator;
 
     // Exports rather all, which corresponds to previous state without module-info
     exports org.glassfish.jersey;
@@ -56,6 +55,7 @@ module org.glassfish.jersey.core.common {
 
     opens org.glassfish.jersey.innate.spi to org.glassfish.jersey.media.multipart;
     opens org.glassfish.jersey.internal;
+    opens org.glassfish.jersey.internal.inject;
     opens org.glassfish.jersey.message.internal;
     opens org.glassfish.jersey.spi;
 
