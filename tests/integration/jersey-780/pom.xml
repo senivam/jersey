@@ -43,6 +43,22 @@
             <artifactId>jersey-test-framework-provider-external</artifactId>
             <scope>test</scope>
         </dependency>
+        <dependency>
+            <groupId>org.glassfish.jersey.test-framework</groupId>
+            <artifactId>jersey-test-framework-core</artifactId>
+            <scope>test</scope>
+        </dependency>
+
+        <dependency>
+            <groupId>org.testng</groupId>
+            <artifactId>testng</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.junit.jupiter</groupId>
+            <artifactId>junit-jupiter-engine</artifactId>
+            <scope>test</scope>
+        </dependency>
     </dependencies>
 
     <build>
@@ -61,5 +77,10 @@
             </plugin>
         </plugins>
     </build>
-
+    <properties>
+        <failsafe.coverage.argline>
+            --add-reads org.glassfish.jersey.tests.integration.jersey_780=ALL-UNNAMED
+            --add-modules=ALL-MODULE-PATH
+        </failsafe.coverage.argline>
+    </properties>
 </project>
