@@ -180,7 +180,7 @@
                     <plugin>
                         <groupId>uk.co.deliverymind</groupId>
                         <artifactId>wiremock-maven-plugin</artifactId>
-                        <version>${wiremock.maven.plugin.version}</version>
+                        <version>${wiremock.mvn.plugin.version}</version>
                         <executions>
                             <execution>
                                 <phase>test-compile</phase>
