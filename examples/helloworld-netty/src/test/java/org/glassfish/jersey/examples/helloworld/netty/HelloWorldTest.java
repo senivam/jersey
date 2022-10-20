@@ -10,8 +10,14 @@
 
 package org.glassfish.jersey.examples.helloworld.netty;
 
+import java.io.IOException;
 import java.net.HttpURLConnection;
+import java.net.URI;
+import java.net.URISyntaxException;
 import java.net.URL;
+import java.net.http.HttpClient;
+import java.net.http.HttpRequest;
+import java.net.http.HttpResponse;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.logging.Logger;
@@ -138,6 +144,7 @@ public class HelloWorldTest extends JerseyTest {
 
     @Test
     public void testTextPlainOptions() {
+        getClient().register(NettyConnectorProvider.class);
         Response response = target().path(App.ROOT_PATH).request().header("Accept", MediaType.TEXT_PLAIN).options();
         assertEquals(200, response.getStatus());
         final String allowHeader = response.getHeaderString("Allow");
@@ -145,6 +152,18 @@ public class HelloWorldTest extends JerseyTest {
         assertEquals(MediaType.TEXT_PLAIN_TYPE, response.getMediaType());
         final String responseBody = response.readEntity(String.class);
         _checkAllowContent(responseBody);
+    }
+
+    @Test
+    public void testHttp2Support() throws URISyntaxException, IOException, InterruptedException {
+        final HttpClient httpClient = HttpClient.newBuilder().version(HttpClient.Version.HTTP_2).build();
+        final HttpRequest httpRequest = HttpRequest
+                .newBuilder().uri(URI.create("http://localhost:8080/" + App.ROOT_PATH))
+                .GET().build();
+        final HttpResponse<String> httpResponse = httpClient.send(
+                httpRequest, HttpResponse.BodyHandlers.ofString());
+        assertTrue(httpResponse.version().equals(HttpClient.Version.HTTP_2));
+        assertEquals(HelloWorldResource.CLICHED_MESSAGE, httpResponse.body());
     }
 
     private void _checkAllowContent(final String content) {

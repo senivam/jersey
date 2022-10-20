@@ -37,8 +37,18 @@ import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 
 import javax.net.ssl.SSLEngine;
+import javax.net.ssl.SSLException;
 import javax.net.ssl.SSLParameters;
 
+import io.netty.handler.codec.http2.Http2FrameCodecBuilder;
+import io.netty.handler.codec.http2.Http2SecurityUtil;
+import io.netty.handler.ssl.ApplicationProtocolNames;
+import io.netty.handler.ssl.ApplicationProtocolNegotiationHandler;
+import io.netty.handler.ssl.SslContext;
+import io.netty.handler.ssl.SslContextBuilder;
+import io.netty.handler.ssl.SslProvider;
+import io.netty.handler.ssl.SupportedCipherSuiteFilter;
+import io.netty.handler.ssl.util.InsecureTrustManagerFactory;
 import jakarta.ws.rs.ProcessingException;
 import jakarta.ws.rs.client.Client;
 import jakarta.ws.rs.core.Configuration;
@@ -295,6 +305,7 @@ class NettyConnector implements Connector {
                      p.addLast(new HttpClientCodec());
                      p.addLast(new ChunkedWriteHandler());
                      p.addLast(new HttpContentDecompressor());
+                     p.addLast(Http2FrameCodecBuilder.forClient().build());
                     }
                 });
 
@@ -434,6 +445,20 @@ class NettyConnector implements Connector {
         } catch (InterruptedException e) {
             responseDone.completeExceptionally(e);
         }
+    }
+
+    private SslContext getHttp2SSLContext() throws SSLException {
+        SslContext sslCtx = SslContextBuilder.forClient()
+                .sslProvider(SslProvider.JDK)
+                .ciphers(Http2SecurityUtil.CIPHERS, SupportedCipherSuiteFilter.INSTANCE)
+                .trustManager(InsecureTrustManagerFactory.INSTANCE)
+                .applicationProtocolConfig(
+                        new ApplicationProtocolConfig(ApplicationProtocolConfig.Protocol.ALPN,
+                                ApplicationProtocolConfig.SelectorFailureBehavior.NO_ADVERTISE,
+                                ApplicationProtocolConfig.SelectedListenerFailureBehavior.ACCEPT,
+                                ApplicationProtocolNames.HTTP_2))
+                .build();
+        return sslCtx;
     }
 
     private String buildPathWithQueryParameters(URI requestUri) {

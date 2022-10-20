@@ -137,10 +137,8 @@ public class NettyHttpContainerProvider implements ContainerProvider {
 
             if (block) {
                 ch.closeFuture().sync();
-                return ch;
-            } else {
-                return ch;
             }
+            return ch;
         } catch (InterruptedException e) {
             throw new ProcessingException(e);
         }

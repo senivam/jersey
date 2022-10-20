@@ -72,6 +72,13 @@
                 <artifactId>maven-bundle-plugin</artifactId>
                 <inherited>true</inherited>
             </plugin>
+            <plugin>
+                <groupId>org.codehaus.mojo</groupId>
+                <artifactId>exec-maven-plugin</artifactId>
+                <configuration>
+                    <mainClass>org.glassfish.jersey.netty.connector.http2.Http2Client</mainClass>
+                </configuration>
+            </plugin>
         </plugins>
     </build>
 

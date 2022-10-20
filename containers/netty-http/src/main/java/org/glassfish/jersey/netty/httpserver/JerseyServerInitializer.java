@@ -27,7 +27,7 @@ import io.netty.handler.codec.http.HttpMessage;
 import io.netty.handler.codec.http.HttpServerCodec;
 import io.netty.handler.codec.http.HttpServerUpgradeHandler;
 import io.netty.handler.codec.http2.Http2CodecUtil;
-import io.netty.handler.codec.http2.Http2MultiplexCodecBuilder;
+import io.netty.handler.codec.http2.Http2FrameCodecBuilder;
 import io.netty.handler.codec.http2.Http2ServerUpgradeCodec;
 import io.netty.handler.ssl.SslContext;
 import io.netty.handler.stream.ChunkedWriteHandler;
@@ -127,8 +127,8 @@ class JerseyServerInitializer extends ChannelInitializer<SocketChannel> {
             @Override
             public HttpServerUpgradeHandler.UpgradeCodec newUpgradeCodec(CharSequence protocol) {
                 if (AsciiString.contentEquals(Http2CodecUtil.HTTP_UPGRADE_PROTOCOL_NAME, protocol)) {
-                    return new Http2ServerUpgradeCodec(Http2MultiplexCodecBuilder.forServer(
-                                new JerseyHttp2ServerHandler(baseUri, container, resourceConfig)).build());
+                    return new Http2ServerUpgradeCodec(Http2FrameCodecBuilder.forServer().build(),
+                                new JerseyHttp2ServerHandler(baseUri, container, resourceConfig));
                 } else {
                     return null;
                 }

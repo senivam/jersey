@@ -20,6 +20,7 @@ import java.net.URI;
 
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.handler.codec.http.HttpServerCodec;
+import io.netty.handler.codec.http2.Http2FrameCodecBuilder;
 import io.netty.handler.codec.http2.Http2MultiplexCodecBuilder;
 import io.netty.handler.ssl.ApplicationProtocolNames;
 import io.netty.handler.ssl.ApplicationProtocolNegotiationHandler;
@@ -47,19 +48,18 @@ class HttpVersionChooser extends ApplicationProtocolNegotiationHandler {
 
     @Override
     protected void configurePipeline(ChannelHandlerContext ctx, String protocol) throws Exception {
-        if (ApplicationProtocolNames.HTTP_2.equals(protocol)) {
-            ctx.pipeline().addLast(Http2MultiplexCodecBuilder.forServer(
-                        new JerseyHttp2ServerHandler(baseUri, container, resourceConfig)).build());
-            return;
+        switch(protocol) {
+            case ApplicationProtocolNames.HTTP_2:
+                ctx.pipeline().addLast(Http2FrameCodecBuilder.forServer().build(),
+                        new JerseyHttp2ServerHandler(baseUri, container, resourceConfig));
+                return;
+            case ApplicationProtocolNames.HTTP_1_1:
+                ctx.pipeline().addLast(new HttpServerCodec(),
+                        new ChunkedWriteHandler(),
+                        new JerseyServerHandler(baseUri, container, resourceConfig));
+                return;
+            default:
+                throw new IllegalStateException("Unknown protocol: " + protocol);
         }
-
-        if (ApplicationProtocolNames.HTTP_1_1.equals(protocol)) {
-            ctx.pipeline().addLast(new HttpServerCodec(),
-                                   new ChunkedWriteHandler(),
-                                   new JerseyServerHandler(baseUri, container, resourceConfig));
-            return;
-        }
-
-        throw new IllegalStateException("Unknown protocol: " + protocol);
     }
 }
