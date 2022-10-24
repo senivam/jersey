@@ -49,11 +49,13 @@ import javax.net.ssl.SSLContext;
 import org.eclipse.jetty.client.HttpClientTransport;
 import org.eclipse.jetty.client.HttpRequest;
 import org.eclipse.jetty.client.http.HttpClientTransportOverHTTP;
+import org.eclipse.jetty.http2.client.HTTP2Client;
 import org.eclipse.jetty.io.ClientConnector;
 import org.eclipse.jetty.client.util.BasicAuthentication;
 import org.eclipse.jetty.client.util.BytesContentProvider;
 import org.eclipse.jetty.client.util.FutureResponseListener;
 import org.eclipse.jetty.client.util.OutputStreamContentProvider;
+import org.eclipse.jetty.util.component.ContainerLifeCycle;
 import org.glassfish.jersey.client.ClientProperties;
 import org.glassfish.jersey.client.ClientRequest;
 import org.glassfish.jersey.client.ClientResponse;
@@ -132,11 +134,11 @@ import org.eclipse.jetty.util.thread.QueuedThreadPool;
  * @author Arul Dhesiaseelan (aruld at acm.org)
  * @author Marek Potociar
  */
-class JettyConnector implements Connector {
+class JettyConnector <T extends ContainerLifeCycle> implements Connector {
 
     private static final Logger LOGGER = Logger.getLogger(JettyConnector.class.getName());
 
-    private final HttpClient client;
+    private final T client;
     private final CookieStore cookieStore;
     private final Configuration configuration;
     private final Optional<Integer> syncListenerResponseMaxSize;
@@ -152,7 +154,7 @@ class JettyConnector implements Connector {
         HttpClient httpClient = null;
         if (config.isRegistered(JettyHttpClientSupplier.class)) {
             Optional<Object> contract = config.getInstances().stream()
-                    .filter(a-> JettyHttpClientSupplier.class.isInstance(a)).findFirst();
+                    .filter(a-> a.getClass().isAssignableFrom(JettyHttpClientContract.class)).findFirst();
             if (contract.isPresent()) {
                 httpClient = ((JettyHttpClientSupplier) contract.get()).getHttpClient();
             }
@@ -342,6 +344,10 @@ class JettyConnector implements Connector {
      * @param headers - map of Jersey headers
      */
     private void applyUserAgentHeader(final MultivaluedMap<String, Object> headers) {
+        HTTP2Client http2Client = new HTTP2Client();
+        http2Client.set
+        HttpClient httpClient = new HttpClient();
+        httpClient.set
         if (headers.containsKey(HttpHeaders.USER_AGENT)) {
             final Map<String, String> stringHeaders =
                     HeaderUtils.asStringHeadersSingleValue(headers, configuration);

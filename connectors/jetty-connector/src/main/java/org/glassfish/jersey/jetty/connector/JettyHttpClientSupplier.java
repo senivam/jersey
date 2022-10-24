@@ -38,7 +38,7 @@ import org.eclipse.jetty.client.HttpClient;
  *     The {@code HttpClient} is configured as if it was created by {@link JettyConnector} the usual way.
  * </p>
  */
-public class JettyHttpClientSupplier implements JettyHttpClientContract {
+public class JettyHttpClientSupplier implements JettyHttpClientContract<HttpClient> {
     private final HttpClient httpClient;
 
     /**

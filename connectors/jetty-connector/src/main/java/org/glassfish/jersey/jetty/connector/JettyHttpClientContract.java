@@ -17,6 +17,7 @@
 package org.glassfish.jersey.jetty.connector;
 
 import org.eclipse.jetty.client.HttpClient;
+import org.eclipse.jetty.util.component.ContainerLifeCycle;
 import org.glassfish.jersey.spi.Contract;
 
 /**
@@ -24,10 +25,10 @@ import org.glassfish.jersey.spi.Contract;
  * that is consequently used by {@link JettyConnector}
  */
 @Contract
-public interface JettyHttpClientContract {
+public interface JettyHttpClientContract<T extends ContainerLifeCycle> {
     /**
      * Supply a user predefined HttpClient
      * @return a user predefined HttpClient
      */
-    HttpClient getHttpClient();
+    T getHttpClient();
 }
