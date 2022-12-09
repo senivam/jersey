@@ -282,9 +282,9 @@ public final class SslConfigurator {
     }
 
     /**
-     * Get a new & initialized SSL configurator instance. The the instantiated configurator will be empty.
+     * Get a new &amp; initialized SSL configurator instance. The instantiated configurator will be empty.
      *
-     * @return new & initialized SSL configurator instance.
+     * @return new &amp; initialized SSL configurator instance.
      */
     public static SslConfigurator newInstance() {
         return new SslConfigurator(false);

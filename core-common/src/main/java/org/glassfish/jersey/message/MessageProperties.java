@@ -19,7 +19,7 @@ package org.glassfish.jersey.message;
 import org.glassfish.jersey.internal.util.PropertiesClass;
 
 /**
- * Jersey configuration properties for message & entity processing.
+ * Jersey configuration properties for message &amp; entity processing.
  *
  * @author Marek Potociar
  */
@@ -28,7 +28,7 @@ public final class MessageProperties {
 
     /**
      * If set to {@code true} then XML root element tag name for collections will
-     * be derived from {@link jakarta.xml.bind.annotation.XmlRootElement @XmlRootElement}
+     * be derived from {@code  jakarta.xml.bind.annotation.XmlRootElement}
      * annotation value and won't be de-capitalized.
      * <p />
      * The default value is {@code false}.

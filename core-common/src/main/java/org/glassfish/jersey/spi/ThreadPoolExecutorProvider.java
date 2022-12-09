@@ -54,7 +54,7 @@ public class ThreadPoolExecutorProvider extends AbstractThreadPoolProvider<Threa
     /**
      * Create a new instance of the thread pool executor provider.
      *
-     * @param name provider name. The name will be used to name the threads created & used by the
+     * @param name provider name. The name will be used to name the threads created &amp; used by the
      *             provisioned thread pool executor.
      */
     public ThreadPoolExecutorProvider(final String name) {

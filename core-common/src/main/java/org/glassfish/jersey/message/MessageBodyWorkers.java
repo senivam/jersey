@@ -177,8 +177,8 @@ public interface MessageBodyWorkers {
      *                    that will be read. E.g. if the message body is to be consumed as a
      *                    method parameter, this will be the annotations on that parameter
      *                    returned by {@code Method.getParameterAnnotations}.
-     * @return the list of supported media types, the list is ordered as follows: a/b &lt
-     *         a/* &lt *\\/*
+     * @return the list of supported media types, the list is ordered as follows: a/b &lt;
+     *         a/* &lt; *\\/*
      */
     List<MediaType> getMessageBodyReaderMediaTypes(Class<?> type, Type genericType, Annotation[] annotations);
 
@@ -186,8 +186,8 @@ public interface MessageBodyWorkers {
      * Get the list of media types supported for a Java type.
      *
      * @param type        the class of object that is to be read.
-     * @return the list of supported media types, the list is ordered as follows: a/b &lt
-     *         a/* &lt *\\/*
+     * @return the list of supported media types, the list is ordered as follows: a/b &lt;
+     *         a/* &lt; *\\/*
      */
     List<MediaType> getMessageBodyReaderMediaTypesByType(Class<?> type);
 
@@ -222,8 +222,8 @@ public interface MessageBodyWorkers {
      *                    that will be written. E.g. if the message body is to be produced from a
      *                    field, this will be the annotations on that field returned by
      *                    {@code Field.getDeclaredAnnotations}.
-     * @return the list of supported media types, the list is ordered as follows: a/b &lt
-     *         a/* &lt *\\/*
+     * @return the list of supported media types, the list is ordered as follows: a/b &lt;
+     *         a/* &lt; *\\/*
      */
     List<MediaType> getMessageBodyWriterMediaTypes(Class<?> type, Type genericType, Annotation[] annotations);
 
@@ -231,8 +231,8 @@ public interface MessageBodyWorkers {
      * Get the list of media types supported for a Java type.
      *
      * @param type        the class of object that is to be written.
-     * @return the list of supported media types, the list is ordered as follows: a/b &lt
-     *         a/* &lt *\\/*
+     * @return the list of supported media types, the list is ordered as follows: a/b &lt;
+     *         a/* &lt; *\\/*
      */
     List<MediaType> getMessageBodyWriterMediaTypesByType(Class<?> type);
 

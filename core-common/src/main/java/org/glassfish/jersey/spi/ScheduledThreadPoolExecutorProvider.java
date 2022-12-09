@@ -59,7 +59,7 @@ public class ScheduledThreadPoolExecutorProvider extends AbstractThreadPoolProvi
     /**
      * Create a new instance of the scheduled thread pool executor provider.
      *
-     * @param name provider name. The name will be used to name the threads created & used by the
+     * @param name provider name. The name will be used to name the threads created &amp; used by the
      *             provisioned scheduled thread pool executor.
      */
     public ScheduledThreadPoolExecutorProvider(final String name) {

@@ -50,7 +50,7 @@ public class RankedProvider<T> {
     }
 
     /**
-     * Creates a new {@code RankedProvider} instance for given {@code provider} with specific {@code rank} (> 0).
+     * Creates a new {@code RankedProvider} instance for given {@code provider} with specific {@code rank} (&gt; 0).
      *
      * @param provider service provider to create a {@code RankedProvider} instance from.
      * @param rank rank of this provider.
@@ -60,7 +60,7 @@ public class RankedProvider<T> {
     }
 
     /**
-     * Creates a new {@code RankedProvider} instance for given {@code provider} with specific {@code rank} (> 0).
+     * Creates a new {@code RankedProvider} instance for given {@code provider} with specific {@code rank} (&gt; 0).
      *
      * @param provider service provider to create a {@code RankedProvider} instance from.
      * @param rank rank of this provider.

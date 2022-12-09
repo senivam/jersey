@@ -26,7 +26,7 @@ import java.util.concurrent.ExecutorService;
  * such as application servers, cloud environments etc.
  * Dedicated Jersey extension modules or applications running in such environment may provide a custom
  * implementation of the {@code ExecutorServiceProvider} interface to customize the default
- * Jersey runtime thread management & provisioning strategy in order to comply with the threading requirements,
+ * Jersey runtime thread management &amp; provisioning strategy in order to comply with the threading requirements,
  * models and policies specific to each particular environment.
  * </p>
  * <p>

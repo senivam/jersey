@@ -75,7 +75,7 @@ public abstract class AbstractThreadPoolProvider<E extends ThreadPoolExecutor> i
     /**
      * Inheritance constructor.
      *
-     * @param name name of the provided thread pool executor. Will be used in the names of threads created & used by the
+     * @param name name of the provided thread pool executor. Will be used in the names of threads created &amp; used by the
      *             provided thread pool executor.
      */
     protected AbstractThreadPoolProvider(final String name) {

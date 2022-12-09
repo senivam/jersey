@@ -31,7 +31,7 @@ import jakarta.ws.rs.core.MultivaluedMap;
 
 
 /**
- * Abstract base class for form entity types marshalling & un-marshalling support.
+ * Abstract base class for form entity types marshalling &amp; un-marshalling support.
  *
  * @param <T> form type.
  *

@@ -901,7 +901,7 @@ public class UriComponent {
 
     /**
      * Return the {@code Request-Uri} representation as defined by HTTP spec. For example:
-     * <pre>&lt;Method> &lt;Request-URI> HTTP/&lt;Version> (e.g. GET /auth;foo=bar/hello?foo=bar HTTP/1.1)</pre>
+     * <pre>&lt;Method&gt; &lt;Request-URI&gt; HTTP/&lt;Version&gt; (e.g. GET /auth;foo=bar/hello?foo=bar HTTP/1.1)</pre>
      *
      * @param uri uri to obtain {@code Request-Uri} from.
      * @return {@code Request-Uri} representation or {@code null} if {@code uri} is not provided.
