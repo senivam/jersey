@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2022 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022 Oracle and/or its affiliates. All rights reserved.
  *
  * This program and the accompanying materials are made available under the
  * terms of the Eclipse Public License v. 2.0, which is available at
@@ -18,13 +18,13 @@ package org.glassfish.jersey.jetty.connector;
 
 import jakarta.ws.rs.client.Client;
 import jakarta.ws.rs.core.Configuration;
-import org.eclipse.jetty.client.http.HttpClientTransportOverHTTP;
+import org.eclipse.jetty.http2.client.HTTP2Client;
+import org.eclipse.jetty.http2.client.http.HttpClientTransportOverHTTP2;
 
-public class JettyConnector  extends AbstractJettyConnector {
+public class JettyHttp2Connector extends AbstractJettyConnector {
 
-    JettyConnector(final Client jaxrsClient, final Configuration config) {
-
-        super(new HttpClientTransportOverHTTP(), jaxrsClient, config);
+    public JettyHttp2Connector(final Client jaxrsClient, final Configuration config) {
+        super(new HttpClientTransportOverHTTP2(new HTTP2Client()), jaxrsClient, config);
     }
 
 }

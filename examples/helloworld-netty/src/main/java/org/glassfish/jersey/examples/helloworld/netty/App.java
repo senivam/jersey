@@ -25,7 +25,7 @@ public class App {
 
     static final String ROOT_PATH = "helloworld";
 
-    private static final URI BASE_URI = URI.create("http://localhost:8080/");
+    static final URI BASE_URI = URI.create("http://localhost:8080/");
 
     public static void main(String[] args) {
         try {

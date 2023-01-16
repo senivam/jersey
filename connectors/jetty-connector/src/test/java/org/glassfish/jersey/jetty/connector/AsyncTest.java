@@ -16,6 +16,7 @@
 
 package org.glassfish.jersey.jetty.connector;
 
+import java.util.Arrays;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.logging.Logger;
@@ -31,12 +32,16 @@ import jakarta.ws.rs.core.Application;
 import jakarta.ws.rs.core.Response;
 
 import org.glassfish.jersey.client.ClientConfig;
+import org.glassfish.jersey.client.spi.ConnectorProvider;
 import org.glassfish.jersey.logging.LoggingFeature;
 import org.glassfish.jersey.server.ResourceConfig;
 import org.glassfish.jersey.test.JerseyTest;
 
 import org.hamcrest.Matchers;
 import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.junit.runners.Parameterized;
+
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertThat;
 
@@ -46,9 +51,18 @@ import static org.junit.Assert.assertThat;
  * @author Arul Dhesiaseelan (aruld at acm.org)
  * @author Marek Potociar
  */
+@RunWith(Parameterized.class)
 public class AsyncTest extends JerseyTest {
     private static final Logger LOGGER = Logger.getLogger(AsyncTest.class.getName());
     private static final String PATH = "async";
+
+    @Parameterized.Parameters(name = "{index}: {0}")
+    public static Iterable<ConnectorProvider[]> providers() {
+        return Arrays.asList(new ConnectorProvider[][]{{new JettyConnectorProvider()}, {new JettyHttp2ConnectorProvider()}});
+    }
+
+    @Parameterized.Parameter
+    public ConnectorProvider provider;
 
     /**
      * Asynchronous test resource.
@@ -149,7 +163,7 @@ public class AsyncTest extends JerseyTest {
     protected void configureClient(ClientConfig config) {
         // TODO: fails with true on request - should be fixed by resolving JERSEY-2273
         config.register(new LoggingFeature(LOGGER, LoggingFeature.Verbosity.HEADERS_ONLY));
-        config.connectorProvider(new JettyConnectorProvider());
+        config.connectorProvider(provider);
     }
 
     /**

@@ -1,3 +1,19 @@
+/*
+ * Copyright (c) 2023 Oracle and/or its affiliates. All rights reserved.
+ *
+ * This program and the accompanying materials are made available under the
+ * terms of the Eclipse Public License v. 2.0, which is available at
+ * http://www.eclipse.org/legal/epl-2.0.
+ *
+ * This Source Code may also be made available under the following Secondary
+ * Licenses when the conditions for such availability set forth in the
+ * Eclipse Public License v. 2.0 are satisfied: GNU General Public License,
+ * version 2 with the GNU Classpath Exception, which is available at
+ * https://www.gnu.org/software/classpath/license.html.
+ *
+ * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
+ */
+
 package org.glassfish.jersey.netty.connector.http2;
 
 import io.netty.buffer.ByteBuf;
@@ -11,10 +27,8 @@ import io.netty.util.CharsetUtil;
 import io.netty.util.internal.PlatformDependent;
 
 import java.util.AbstractMap.SimpleEntry;
-import java.util.Iterator;
 import java.util.Map;
 import java.util.Map.Entry;
-import java.util.concurrent.TimeUnit;
 
 public class HttpResponseHandler extends SimpleChannelInboundHandler<FullHttpResponse> {
 
@@ -39,35 +53,6 @@ public class HttpResponseHandler extends SimpleChannelInboundHandler<FullHttpRes
         return streamidPromiseMap.put(streamId, new SimpleEntry<ChannelFuture, ChannelPromise>(writeFuture, promise));
     }
 
-    /**
-     * Wait (sequentially) for a time duration for each anticipated response
-     *
-     * @param timeout Value of time to wait for each response
-     * @param unit Units associated with {@code timeout}
-     * @see HttpResponseHandler#put(int, io.netty.channel.ChannelFuture, io.netty.channel.ChannelPromise)
-     */
-    public void awaitResponses(long timeout, TimeUnit unit) {
-        Iterator<Entry<Integer, Entry<ChannelFuture, ChannelPromise>>> itr = streamidPromiseMap.entrySet().iterator();
-        while (itr.hasNext()) {
-            Entry<Integer, Entry<ChannelFuture, ChannelPromise>> entry = itr.next();
-            ChannelFuture writeFuture = entry.getValue().getKey();
-            if (!writeFuture.awaitUninterruptibly(timeout, unit)) {
-                throw new IllegalStateException("Timed out waiting to write for stream id " + entry.getKey());
-            }
-            if (!writeFuture.isSuccess()) {
-                throw new RuntimeException(writeFuture.cause());
-            }
-            ChannelPromise promise = entry.getValue().getValue();
-            if (!promise.awaitUninterruptibly(timeout, unit)) {
-                throw new IllegalStateException("Timed out waiting for response on stream id " + entry.getKey());
-            }
-            if (!promise.isSuccess()) {
-                throw new RuntimeException(promise.cause());
-            }
-            System.out.println("---Stream id: " + entry.getKey() + " received---");
-            itr.remove();
-        }
-    }
 
     @Override
     protected void channelRead0(ChannelHandlerContext ctx, FullHttpResponse msg) throws Exception {

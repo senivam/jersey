@@ -16,23 +16,14 @@
 
 package org.glassfish.jersey.netty.connector.http2;
 
-import io.netty.channel.ChannelInitializer;
 import jakarta.ws.rs.client.Client;
-import org.glassfish.jersey.client.ClientRequest;
-import org.glassfish.jersey.client.innate.ClientProxy;
-import org.glassfish.jersey.netty.connector.AbstractNettyConnector;
+import jakarta.ws.rs.core.Configuration;
+import org.glassfish.jersey.client.spi.Connector;
+import org.glassfish.jersey.client.spi.ConnectorProvider;
 
-import java.util.Optional;
-
-public class NettyHttp2Connector extends AbstractNettyConnector {
-
-    NettyHttp2Connector(Client client) {
-        super(client);
-    }
-
-
+public class NettyHttp2ConnectorProvider implements ConnectorProvider {
     @Override
-    public ChannelInitializer<?> getChannelInitializer(ClientRequest jerseyRequest, Optional<ClientProxy> handlerProxy) {
-        return new Http2ClientInitializer(jerseyRequest, handlerProxy);
+    public Connector getConnector(Client client, Configuration runtimeConfig) {
+        return new NettyHttp2Connector(client);
     }
 }

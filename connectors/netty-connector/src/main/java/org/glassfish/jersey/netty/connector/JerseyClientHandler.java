@@ -62,7 +62,7 @@ class JerseyClientHandler extends SimpleChannelInboundHandler<HttpObject> {
     private final CompletableFuture<?> responseDone;
     private final boolean followRedirects;
     private final int maxRedirects;
-    private final NettyConnector connector;
+    private final AbstractNettyConnector connector;
 
     private NettyInputStream nis;
     private ClientResponse jerseyResponse;
@@ -70,7 +70,7 @@ class JerseyClientHandler extends SimpleChannelInboundHandler<HttpObject> {
     private boolean readTimedOut;
 
     JerseyClientHandler(ClientRequest request, CompletableFuture<ClientResponse> responseAvailable,
-                        CompletableFuture<?> responseDone, Set<URI> redirectUriHistory, NettyConnector connector) {
+                        CompletableFuture<?> responseDone, Set<URI> redirectUriHistory, AbstractNettyConnector connector) {
         this.redirectUriHistory = redirectUriHistory;
         this.jerseyRequest = request;
         this.responseAvailable = responseAvailable;

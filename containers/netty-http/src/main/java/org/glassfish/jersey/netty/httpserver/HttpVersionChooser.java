@@ -48,7 +48,7 @@ class HttpVersionChooser extends ApplicationProtocolNegotiationHandler {
 
     @Override
     protected void configurePipeline(ChannelHandlerContext ctx, String protocol) throws Exception {
-        switch(protocol) {
+        switch (protocol) {
             case ApplicationProtocolNames.HTTP_2:
                 ctx.pipeline().addLast(Http2FrameCodecBuilder.forServer().build(),
                         new JerseyHttp2ServerHandler(baseUri, container, resourceConfig));
