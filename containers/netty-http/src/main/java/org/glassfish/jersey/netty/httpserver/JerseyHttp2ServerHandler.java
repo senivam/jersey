@@ -26,6 +26,14 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import io.netty.buffer.ByteBuf;
+import io.netty.buffer.Unpooled;
+import io.netty.handler.codec.http.HttpResponseStatus;
+import io.netty.handler.codec.http2.DefaultHttp2DataFrame;
+import io.netty.handler.codec.http2.DefaultHttp2Headers;
+import io.netty.handler.codec.http2.DefaultHttp2HeadersFrame;
+import io.netty.handler.codec.http2.Http2Headers;
+import io.netty.util.CharsetUtil;
 import jakarta.ws.rs.core.SecurityContext;
 
 import io.netty.channel.ChannelDuplexHandler;
@@ -161,7 +169,7 @@ class JerseyHttp2ServerHandler extends ChannelDuplexHandler {
                 }, resourceConfig);
 
         // request entity handling.
-        if (!http2Headers.isEndStream()) {
+        if (http2Headers.isEndStream()) {
 
             ctx.channel().closeFuture().addListener(new GenericFutureListener<Future<? super Void>>() {
                 @Override

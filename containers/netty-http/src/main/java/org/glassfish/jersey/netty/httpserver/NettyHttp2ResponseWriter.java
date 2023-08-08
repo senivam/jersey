@@ -24,6 +24,14 @@ import java.util.Map;
 import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
 
+import io.netty.channel.ChannelFuture;
+import io.netty.handler.codec.http.FullHttpResponse;
+import io.netty.handler.codec.http.HttpChunkedInput;
+import io.netty.handler.codec.http.HttpUtil;
+import io.netty.handler.codec.http.LastHttpContent;
+import io.netty.handler.codec.http2.Http2Headers;
+import io.netty.util.AsciiString;
+import org.glassfish.jersey.netty.connector.internal.JerseyChunkedInput;
 import org.glassfish.jersey.server.ContainerException;
 import org.glassfish.jersey.server.ContainerResponse;
 import org.glassfish.jersey.server.spi.ContainerResponseWriter;
@@ -39,6 +47,9 @@ import io.netty.handler.codec.http2.DefaultHttp2DataFrame;
 import io.netty.handler.codec.http2.DefaultHttp2Headers;
 import io.netty.handler.codec.http2.DefaultHttp2HeadersFrame;
 import io.netty.handler.codec.http2.Http2HeadersFrame;
+
+import static io.netty.handler.codec.http.HttpResponseStatus.OK;
+import static io.netty.handler.codec.http.HttpVersion.HTTP_1_1;
 
 /**
  * Netty implementation of {@link ContainerResponseWriter}.
@@ -67,12 +78,11 @@ class NettyHttp2ResponseWriter implements ContainerResponseWriter {
         String reasonPhrase = responseContext.getStatusInfo().getReasonPhrase();
         int statusCode = responseContext.getStatus();
 
-        HttpResponseStatus status = reasonPhrase == null
-                ? HttpResponseStatus.valueOf(statusCode)
-                : new HttpResponseStatus(statusCode, reasonPhrase);
+        final AsciiString status = reasonPhrase == null
+                ? HttpResponseStatus.valueOf(statusCode).codeAsText()
+                : new HttpResponseStatus(statusCode, reasonPhrase).codeAsText();
 
-        DefaultHttp2Headers response = new DefaultHttp2Headers();
-        response.status(Integer.toString(responseContext.getStatus()));
+        final Http2Headers response = new DefaultHttp2Headers().status(status);
 
         for (final Map.Entry<String, List<String>> e : responseContext.getStringHeaders().entrySet()) {
             response.add(e.getKey().toLowerCase(Locale.ROOT), e.getValue());
@@ -102,7 +112,7 @@ class NettyHttp2ResponseWriter implements ContainerResponseWriter {
                     ByteBuf buffer = ctx.alloc().buffer(len);
                     buffer.writeBytes(b, off, len);
 
-                    ctx.writeAndFlush(new DefaultHttp2DataFrame(buffer, false));
+                    ctx.write(new DefaultHttp2DataFrame(buffer, false));
                 }
 
                 @Override
@@ -112,7 +122,7 @@ class NettyHttp2ResponseWriter implements ContainerResponseWriter {
 
                 @Override
                 public void close() throws IOException {
-                    ctx.write(new DefaultHttp2DataFrame(true)).addListener(NettyResponseWriter.FLUSH_FUTURE);
+                    ctx.writeAndFlush(LastHttpContent.EMPTY_LAST_CONTENT).addListener(NettyResponseWriter.FLUSH_FUTURE);
                 }
             };
 

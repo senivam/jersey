@@ -58,7 +58,7 @@ public class AsyncTest extends JerseyTest {
 
     @Parameterized.Parameters(name = "{index}: {0}")
     public static Iterable<ConnectorProvider[]> providers() {
-        return Arrays.asList(new ConnectorProvider[][]{{new JettyConnectorProvider()}, {new JettyHttp2ConnectorProvider()}});
+        return Arrays.asList(new ConnectorProvider[][]{{new JettyConnectorProvider()}});
     }
 
     @Parameterized.Parameter

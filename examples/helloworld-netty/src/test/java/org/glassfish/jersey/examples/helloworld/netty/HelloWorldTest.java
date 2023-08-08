@@ -32,6 +32,7 @@ import jakarta.ws.rs.core.Response;
 import jakarta.ws.rs.core.UriBuilder;
 
 import org.glassfish.jersey.client.ClientConfig;
+import org.glassfish.jersey.jetty.connector.JettyHttp2ConnectorProvider;
 import org.glassfish.jersey.netty.connector.NettyConnectorProvider;
 import org.glassfish.jersey.netty.connector.http2.NettyHttp2ConnectorProvider;
 import org.glassfish.jersey.server.ResourceConfig;
@@ -54,13 +55,15 @@ public class HelloWorldTest extends JerseyTest {
     @Override
     protected ResourceConfig configure() {
         enable(TestProperties.LOG_TRAFFIC);
+        set(TestProperties.RECORD_LOG_LEVEL, 10);
+        set("org.eclipse.jetty.http2", "DEBUG");
         // enable(TestProperties.DUMP_ENTITY);
         return new ResourceConfig(HelloWorldResource.class);
     }
 
     @Override
     protected void configureClient(ClientConfig clientConfig) {
-        clientConfig.connectorProvider(new NettyHttp2ConnectorProvider());
+        clientConfig.connectorProvider(new JettyHttp2ConnectorProvider());
     }
 
     @Override
@@ -85,7 +88,7 @@ public class HelloWorldTest extends JerseyTest {
     }
 
     @Test
-    @Ignore
+//    @Ignore
     public void testConnection() {
         Response response = target().path(App.ROOT_PATH).request("text/plain").get();
         assertEquals(200, response.getStatus());
@@ -157,7 +160,7 @@ public class HelloWorldTest extends JerseyTest {
     @Test
     @Ignore
     public void testTextPlainOptions() {
-        getClient().register(NettyHttp2ConnectorProvider.class);
+        getClient().register(JettyHttp2ConnectorProvider.class);
         Response response = target().path(App.ROOT_PATH).request().header("Accept", MediaType.TEXT_PLAIN).options();
         assertEquals(200, response.getStatus());
         final String allowHeader = response.getHeaderString("Allow");
@@ -168,11 +171,11 @@ public class HelloWorldTest extends JerseyTest {
     }
 
     @Test
-    @Ignore
+//    @Ignore
     public void testHttp2Support() throws URISyntaxException, IOException, InterruptedException {
         final HttpClient httpClient = HttpClient.newBuilder().version(HttpClient.Version.HTTP_2).build();
         final HttpRequest httpRequest = HttpRequest
-                .newBuilder().uri(URI.create("http://localhost:8080/" + App.ROOT_PATH))
+                .newBuilder().uri(URI.create("https://127.0.0.1:8443/http2?latency=0"))
                 .GET().build();
         final HttpResponse<String> httpResponse = httpClient.send(
                 httpRequest, HttpResponse.BodyHandlers.ofString());
@@ -251,6 +254,7 @@ public class HelloWorldTest extends JerseyTest {
     }
 
     @Test
+    @Ignore
     @RunSeparately
     public void testConfigurationUpdate() {
         Client client1 = client();

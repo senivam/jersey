@@ -18,6 +18,8 @@ package org.glassfish.jersey.netty.httpserver;
 
 import java.net.URI;
 
+import io.netty.handler.logging.LogLevel;
+import io.netty.handler.logging.LoggingHandler;
 import jakarta.ws.rs.ProcessingException;
 import jakarta.ws.rs.core.Application;
 
