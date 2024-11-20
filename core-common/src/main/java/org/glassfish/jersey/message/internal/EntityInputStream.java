@@ -18,7 +18,6 @@ package org.glassfish.jersey.message.internal;
 
 import java.io.IOException;
 import java.io.InputStream;
-import java.io.PushbackInputStream;
 
 import jakarta.ws.rs.ProcessingException;
 
@@ -93,13 +92,12 @@ public class EntityInputStream extends InputStreamWrapper {
      */
     @Override
     public void close() throws ProcessingException {
-        final InputStream in = input;
-        if (in == null) {
+        if (input == null) {
             return;
         }
         if (!closed) {
             try {
-                in.close();
+                input.close();
             } catch (IOException ex) {
                 // This e.g. means that the underlying socket stream got closed by other thread somehow...
                 throw new ProcessingException(LocalizationMessages.MESSAGE_CONTENT_INPUT_STREAM_CLOSE_FAILED(), ex);
@@ -119,43 +117,39 @@ public class EntityInputStream extends InputStreamWrapper {
      */
     public boolean isEmpty() {
         ensureNotClosed();
-
-        final InputStream in = input;
-        if (in == null) {
+        if (input == null) {
             return true;
         }
 
         try {
             // Try #markSupported first - #available on WLS waits until socked timeout is reached when chunked encoding is used.
-            if (in.markSupported()) {
-                in.mark(1);
-                int i = in.read();
-                in.reset();
+            if (input.markSupported()) {
+                input.mark(1);
+                int i = input.read();
+                input.reset();
                 return i == -1;
             } else {
+                int availableBytes = 0;
+                int exceedCount = 50;
                 try {
-                    if (in.available() > 0) {
-                        return false;
+
+                    while (availableBytes == 0 && exceedCount > 0) {
+                        availableBytes = input.available();
+                        exceedCount--;
                     }
+
                 } catch (IOException ioe) {
                     // NOOP. Try other approaches as this can fail on WLS.
                 }
 
-                int b = in.read();
-                if (b == -1) {
-                    return true;
+                if (availableBytes > 0) {
+                    return false;
                 }
-
-                PushbackInputStream pbis;
-                if (in instanceof PushbackInputStream) {
-                    pbis = (PushbackInputStream) in;
-                } else {
-                    pbis = new PushbackInputStream(in, 1);
-                    input = pbis;
-                }
-                pbis.unread(b);
-
-                return false;
+                //This situation should never happen, but due to some circumstances it can occur - stream comes very
+                //late, stream's implementation does not override default available() or something like that.
+                //It's impossible to read from the underlying stream and properly return the read byte into it.
+                //So we just return true not to corrupt the stream. This marks the whole stream as empty.
+                return true;
             }
         } catch (IOException ex) {
             throw new ProcessingException(ex);
