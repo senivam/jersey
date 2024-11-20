@@ -18,6 +18,7 @@ package org.glassfish.jersey.message.internal;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.PushbackInputStream;
 
 import jakarta.ws.rs.ProcessingException;
 
@@ -145,11 +146,15 @@ public class EntityInputStream extends InputStreamWrapper {
                 if (availableBytes > 0) {
                     return false;
                 }
-                //This situation should never happen, but due to some circumstances it can occur - stream comes very
-                //late, stream's implementation does not override default available() or something like that.
-                //It's impossible to read from the underlying stream and properly return the read byte into it.
-                //So we just return true not to corrupt the stream. This marks the whole stream as empty.
-                return true;
+
+                final PushbackInputStream in = (input instanceof PushbackInputStream) ? (PushbackInputStream) input
+                       : new PushbackInputStream(input);
+                //This situation occurs in rare cases - stream comes very late, stream's implementation does not
+                // override default available() or something like that.
+                int i = in.read();
+                in.unread(i);
+                input = in;
+                return i == -1;
             }
         } catch (IOException ex) {
             throw new ProcessingException(ex);
