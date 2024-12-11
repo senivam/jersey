@@ -580,6 +580,16 @@ public abstract class InboundMessageContext extends MessageHeaderMethods {
     }
 
     /**
+     * Provides the whole {@link EntityInputStream} to the request
+     *
+     * @param stream the whole input stream entity
+     */
+    public void wrapEntityInputStream(EntityInputStream stream) {
+        this.entityContent.wrapEntityInputStream(stream);
+        this.entityContent.buffered = false;
+    }
+
+    /**
      * Read entity from a context entity input stream.
      *
      * @param <T>                entity Java object type.

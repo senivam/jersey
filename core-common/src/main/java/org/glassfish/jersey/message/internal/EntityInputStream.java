@@ -37,6 +37,9 @@ import org.glassfish.jersey.internal.LocalizationMessages;
 public class EntityInputStream extends InputStreamWrapper {
 
     private InputStream input;
+
+    private EntityInputStreamListener listener;
+
     private boolean closed = false;
 
     /**
@@ -131,20 +134,21 @@ public class EntityInputStream extends InputStreamWrapper {
                 return i == -1;
             } else {
                 int availableBytes = 0;
-                int exceedCount = 50;
                 try {
-
-                    while (availableBytes == 0 && exceedCount > 0) {
-                        availableBytes = input.available();
-                        exceedCount--;
-                    }
-
+                    availableBytes = input.available();
                 } catch (IOException ioe) {
                     // NOOP. Try other approaches as this can fail on WLS.
                 }
 
                 if (availableBytes > 0) {
                     return false;
+                }
+
+                if (listener != null) {
+                    if (!listener.isReady()) {
+                        return false;
+                    }
+                    return listener.isEmpty();
                 }
 
                 final PushbackInputStream in = (input instanceof PushbackInputStream) ? (PushbackInputStream) input
@@ -187,7 +191,7 @@ public class EntityInputStream extends InputStreamWrapper {
      * @return wrapped input stream instance.
      */
     public final InputStream getWrappedStream() {
-        return input;
+        return getWrapped();
     }
 
     /**
@@ -202,5 +206,30 @@ public class EntityInputStream extends InputStreamWrapper {
     @Override
     protected InputStream getWrapped() {
         return input;
+    }
+
+    /**
+     * Sets listener for the underlying {@link InputStream}
+     * @param listener instance of the {@link EntityInputStreamListener}
+     */
+    public void setListener(EntityInputStreamListener listener) {
+        this.listener = listener;
+    }
+
+    /**
+     * retrieves a listener if any
+     * @return an instance of the {@link EntityInputStreamListener}
+     */
+    public EntityInputStreamListener getListener() {
+        return listener;
+    }
+
+    /**
+     * Decomposes existing {@link EntityInputStream} into this input stream
+     * @param stream instance of the {@link EntityInputStream}
+     */
+    public void wrapEntityInputStream(EntityInputStream stream) {
+        input = stream.getWrapped();
+        listener = stream.getListener();
     }
 }

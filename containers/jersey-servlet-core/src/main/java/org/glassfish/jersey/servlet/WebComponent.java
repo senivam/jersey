@@ -17,7 +17,6 @@
 package org.glassfish.jersey.servlet;
 
 import java.io.IOException;
-import java.io.UncheckedIOException;
 import java.lang.reflect.Type;
 import java.net.URI;
 import java.security.AccessController;
@@ -64,6 +63,7 @@ import org.glassfish.jersey.internal.util.ReflectionHelper;
 import org.glassfish.jersey.internal.util.collection.Ref;
 import org.glassfish.jersey.internal.util.collection.Value;
 import org.glassfish.jersey.internal.util.collection.Values;
+import org.glassfish.jersey.message.internal.EntityInputStream;
 import org.glassfish.jersey.message.internal.HeaderValueException;
 import org.glassfish.jersey.message.internal.MediaTypes;
 import org.glassfish.jersey.process.internal.RequestScoped;
@@ -78,6 +78,7 @@ import org.glassfish.jersey.servlet.internal.LocalizationMessages;
 import org.glassfish.jersey.servlet.internal.PersistenceUnitBinder;
 import org.glassfish.jersey.servlet.internal.ResponseWriter;
 import org.glassfish.jersey.servlet.internal.ServletContainerProviderFactory;
+import org.glassfish.jersey.servlet.internal.ServletRequestEntityWrapper;
 import org.glassfish.jersey.servlet.internal.Utils;
 import org.glassfish.jersey.servlet.internal.spi.ExtendedServletContainerProvider;
 import org.glassfish.jersey.servlet.internal.spi.RequestContextProvider;
@@ -421,11 +422,7 @@ public class WebComponent {
             final HttpServletResponse servletResponse,
             final ResponseWriter responseWriter) throws IOException {
 
-        try {
-            requestContext.setEntityStream(servletRequest.getInputStream());
-        } catch (UncheckedIOException e) {
-            throw e.getCause();
-        }
+        requestContext.wrapEntityInputStream(getInputStream(servletRequest));
 
         requestContext.setRequestScopedInitializer(requestScopedInitializer.get(new RequestContextProvider() {
             @Override
@@ -444,6 +441,10 @@ public class WebComponent {
         // of the media type application/x-www-form-urlencoded
         // This can happen if a filter calls request.getParameter(...)
         filterFormParameters(servletRequest, requestContext);
+    }
+
+    private EntityInputStream getInputStream(HttpServletRequest request) {
+        return new ServletRequestEntityWrapper(request).getWrappedInputStream();
     }
 
     /**

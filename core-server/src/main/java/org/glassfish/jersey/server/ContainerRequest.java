@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2023 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2024 Oracle and/or its affiliates. All rights reserved.
  *
  * This program and the accompanying materials are made available under the
  * terms of the Eclipse Public License v. 2.0, which is available at
@@ -57,6 +57,7 @@ import org.glassfish.jersey.internal.util.collection.Refs;
 import org.glassfish.jersey.internal.util.collection.Value;
 import org.glassfish.jersey.internal.util.collection.Values;
 import org.glassfish.jersey.message.internal.AcceptableMediaType;
+import org.glassfish.jersey.message.internal.EntityInputStream;
 import org.glassfish.jersey.message.internal.HttpHeaderReader;
 import org.glassfish.jersey.message.internal.InboundMessageContext;
 import org.glassfish.jersey.message.internal.LanguageTag;
@@ -544,6 +545,12 @@ public class ContainerRequest extends InboundMessageContext
     public void setEntityStream(final InputStream input) {
         Preconditions.checkState(!inResponseProcessingPhase, ERROR_REQUEST_SET_ENTITY_STREAM_IN_RESPONSE_PHASE);
         super.setEntityStream(input);
+    }
+
+    @Override
+    public void wrapEntityInputStream(final EntityInputStream input) {
+        Preconditions.checkState(!inResponseProcessingPhase, ERROR_REQUEST_SET_ENTITY_STREAM_IN_RESPONSE_PHASE);
+        super.wrapEntityInputStream(input);
     }
 
     @Override
