@@ -57,6 +57,9 @@ public class JerseyExpectContinueHandler extends ChannelInboundHandlerAdapter {
                 ctx.fireChannelRead(msg); //bypass the message to the next handler in line
             } else {
                 ctx.pipeline().remove(JerseyExpectContinueHandler.class);
+                ctx.pipeline().fireChannelActive();
+                System.out.println("Chanel is active after 100-Continue received");
+                ctx.pipeline().flush();
             }
         } else {
             if (!isExpected) {
@@ -118,6 +121,7 @@ public class JerseyExpectContinueHandler extends ChannelInboundHandlerAdapter {
             throw new ProcessingException(LocalizationMessages
                     .UNEXPECTED_VALUE_FOR_EXPECT_100_CONTINUE_STATUSES(status.code()), null);
         }
+        isExpected = false;
     }
 
     boolean isExpected() {

@@ -456,6 +456,8 @@ class NettyConnector implements Connector {
                     }
                 }
 
+                System.out.println("Step after 100-Continue processing");
+
                 final CountDownLatch headersSet = new CountDownLatch(1);
                 final CountDownLatch contentLengthSet = new CountDownLatch(1);
 
@@ -491,11 +493,12 @@ class NettyConnector implements Connector {
                 });
 
                 headersSet.await();
-                if (!expect100ContinueHandler.isExpected()) {
+//                if (!expect100ContinueHandler.isExpected()) {
                     // Send the HTTP request. Expect:100-continue processing is not applicable
                     // in this case.
+                System.out.println("Another step after 100-Continue processing");
                     entityWriter.writeAndFlush(nettyRequest);
-                }
+//                }
 
                 if (HttpUtil.isTransferEncodingChunked(nettyRequest)) {
                     entityWriter.write(new HttpChunkedInput(entityWriter.getChunkedInput()));

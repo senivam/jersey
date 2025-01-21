@@ -203,6 +203,76 @@
                     <threadCount>1</threadCount>
                 </configuration>
             </plugin>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-resources-plugin</artifactId>
+                <version>${resources.mvn.plugin.version}</version>
+                <extensions>true</extensions>
+                <inherited>false</inherited>
+                <!-- Add legal information, NOTICE.md and LINCENSE.md to jars -->
+                <executions>
+                    <execution>
+                        <!-- copy the files to classes folder for maven-jar/war-plugin to grab it -->
+                        <id>copy-legaldocs</id>
+                        <goals>
+                            <goal>copy-resources</goal>
+                        </goals>
+                        <phase>process-sources</phase>
+                        <configuration>
+                            <outputDirectory>${project.build.outputDirectory}</outputDirectory>
+                            <resources>
+                                <resource>
+                                    <directory>${legal.source.folder}</directory>
+                                    <targetPath>META-INF/</targetPath>
+                                    <includes>
+                                        <include>LICENSE.md</include>
+                                    </includes>
+                                </resource>
+                            </resources>
+                        </configuration>
+                    </execution>
+                    <execution>
+                        <!-- copy the files to source folder for maven-source-plugin to grab it -->
+                        <id>copy-legaldocs-to-sources</id>
+                        <goals>
+                            <goal>copy-resources</goal>
+                        </goals>
+                        <phase>process-sources</phase>
+                        <configuration>
+                            <outputDirectory>${project.build.directory}/generated-sources/rsrc-gen</outputDirectory>
+                            <resources>
+                                <resource>
+                                    <directory>${legal.source.folder}</directory>
+                                    <targetPath>META-INF/</targetPath>
+                                    <includes>
+                                        <include>LICENSE.md</include>
+                                    </includes>
+                                </resource>
+                            </resources>
+                        </configuration>
+                    </execution>
+                    <execution>
+                        <!-- copy the files to legal folder for felix plugin to grab it -->
+                        <id>copy-legaldocs-to-osgi-bundles</id>
+                        <goals>
+                            <goal>copy-resources</goal>
+                        </goals>
+                        <phase>process-sources</phase>
+                        <configuration>
+                            <outputDirectory>${project.build.directory}/legal</outputDirectory>
+                            <resources>
+                                <resource>
+                                    <directory>${legal.source.folder}</directory>
+                                    <targetPath>META-INF/</targetPath>
+                                    <includes>
+                                        <include>LICENSE.md</include>
+                                    </includes>
+                                </resource>
+                            </resources>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
         </plugins>
     </build>
 
