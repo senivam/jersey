@@ -14,16 +14,19 @@
  * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
  */
 
-package org.glassfish.jersey.message.internal;
+package org.glassfish.jersey.innate.io;
+
+import org.glassfish.jersey.message.internal.EntityInputStream;
 
 import java.util.EventListener;
 
 /**
  * Provides possibility to externally check whether an input stream for an entity is empty or not.
- *
+ * <p>
  * Is being used in the {@link EntityInputStream#isEmpty()} check
+ * </p>
  */
-public interface EntityInputStreamListener extends EventListener {
+public interface ExternalStreamListener extends EventListener {
 
     /**
      * Provides information if the underlying stream is empty

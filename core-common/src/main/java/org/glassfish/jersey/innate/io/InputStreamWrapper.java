@@ -27,9 +27,9 @@ public abstract class InputStreamWrapper extends InputStream {
 
     /**
      * Return the wrapped stream
-     * @return
+     * @return underlying stream
      */
-    protected abstract InputStream getWrapped();
+    public abstract InputStream getWrapped();
 
     /**
      * Get wrapped stream that can throw {@link IOException}

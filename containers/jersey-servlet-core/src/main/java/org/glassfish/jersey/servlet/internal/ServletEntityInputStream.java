@@ -16,64 +16,42 @@
 
 package org.glassfish.jersey.servlet.internal;
 
-import jakarta.servlet.ReadListener;
 import jakarta.servlet.ServletInputStream;
-import org.glassfish.jersey.message.internal.EntityInputStream;
-import org.glassfish.jersey.message.internal.EntityInputStreamListener;
+import org.glassfish.jersey.innate.io.ExternalStreamListener;
+import org.glassfish.jersey.innate.io.ExternalStreamWrapper;
 
 import java.io.IOException;
+import java.io.InputStream;
 import java.io.UncheckedIOException;
 
-public abstract class ServletEntityInputStream extends ServletInputStream {
+public abstract class ServletEntityInputStream implements ExternalStreamWrapper {
 
-    protected EntityInputStream wrappedStream;
-
-
-    protected abstract ServletInputStream getServletInputStream();
-
-    @Override
-    public boolean isFinished() {
-        return getServletInputStream().isFinished();
-    }
-
-    @Override
-    public boolean isReady() {
-        return getServletInputStream().isReady();
-    }
-
-    @Override
-    public void setReadListener(ReadListener readListener) {
-        getServletInputStream().setReadListener(readListener);
-    }
-
-    @Override
-    public int read() throws IOException {
-        return getServletInputStream().read();
-    }
-
-    public EntityInputStream getWrappedStream() {
-        if (wrappedStream == null) {
-            wrappedStream = new EntityInputStream(getServletInputStream());
-            wrappedStream.setListener(new EntityInputStreamListener() {
-                @Override
-                public boolean isEmpty() {
-                    try {
-                        return getServletInputStream().available() == 0
-                                || getServletInputStream().isFinished();
-                    } catch (IOException e) {
-                        throw new UncheckedIOException(e);
-                    }
-                }
-
-                @Override
-                public boolean isReady() {
-                    return getServletInputStream().isReady();
-                }
-            });
+    private final ExternalStreamListener listener = new ExternalStreamListener() {
+        @Override
+        public boolean isEmpty() {
+            try {
+                return getWrappedStream().available() == 0
+                        || getWrappedStream().isFinished();
+            } catch (IOException e) {
+                throw new UncheckedIOException(e);
+            }
         }
 
-        return wrappedStream;
+        @Override
+        public boolean isReady() {
+            return getWrappedStream().isReady();
+        }
+    };
+
+    protected abstract ServletInputStream getWrappedStream();
+
+    @Override
+    public ExternalStreamListener getListener() {
+        return listener;
     }
 
-
+    @Override
+    public InputStream getExternalStream() {
+        return getWrappedStream();
+    }
 }

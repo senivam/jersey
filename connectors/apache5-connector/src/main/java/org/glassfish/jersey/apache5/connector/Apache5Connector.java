@@ -906,7 +906,7 @@ class Apache5Connector implements Connector {
         }
 
         @Override
-        protected InputStream getWrapped() {
+        public InputStream getWrapped() {
             return in;
         }
 

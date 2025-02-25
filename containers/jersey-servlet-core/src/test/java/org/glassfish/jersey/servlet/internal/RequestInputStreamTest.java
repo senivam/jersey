@@ -47,8 +47,8 @@ public class RequestInputStreamTest {
                 switch (method.getName()) {
                     case "getHeaderNames":
                         return Collections.emptyEnumeration();
-//                    case "getInputStream":
-//                        throw new IllegalStateException("ServletRequest#getInputStream clashes with ServletRequest#getReader");
+                    case "getInputStream":
+                        throw new IllegalStateException("ServletRequest#getInputStream clashes with ServletRequest#getReader");
                 }
                 return null;
             }

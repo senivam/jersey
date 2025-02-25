@@ -2243,7 +2243,7 @@
         <jetty.version>12.0.14</jetty.version>
         <jetty9.version>9.4.56.v20240826</jetty9.version>
         <jetty11.version>11.0.24</jetty11.version>
-        <jetty.plugin.version>12.0.8</jetty.plugin.version>
+        <jetty.plugin.version>12.0.16</jetty.plugin.version>
         <jsonb.api.version>3.0.1</jsonb.api.version>
         <jsonp.ri.version>1.1.7</jsonp.ri.version>
         <jsonp.jaxrs.version>1.1.7</jsonp.jaxrs.version>

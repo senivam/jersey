@@ -22,6 +22,8 @@ import java.io.PushbackInputStream;
 
 import jakarta.ws.rs.ProcessingException;
 
+import org.glassfish.jersey.innate.io.ExternalStreamListener;
+import org.glassfish.jersey.innate.io.ExternalStreamWrapper;
 import org.glassfish.jersey.innate.io.InputStreamWrapper;
 import org.glassfish.jersey.internal.LocalizationMessages;
 
@@ -38,7 +40,7 @@ public class EntityInputStream extends InputStreamWrapper {
 
     private InputStream input;
 
-    private EntityInputStreamListener listener;
+    private ExternalStreamListener listener;
 
     private boolean closed = false;
 
@@ -204,32 +206,21 @@ public class EntityInputStream extends InputStreamWrapper {
     }
 
     @Override
-    protected InputStream getWrapped() {
+    public InputStream getWrapped() {
         return input;
-    }
-
-    /**
-     * Sets listener for the underlying {@link InputStream}
-     * @param listener instance of the {@link EntityInputStreamListener}
-     */
-    public void setListener(EntityInputStreamListener listener) {
-        this.listener = listener;
-    }
-
-    /**
-     * retrieves a listener if any
-     * @return an instance of the {@link EntityInputStreamListener}
-     */
-    public EntityInputStreamListener getListener() {
-        return listener;
     }
 
     /**
      * Decomposes existing {@link EntityInputStream} into this input stream
      * @param stream instance of the {@link EntityInputStream}
      */
-    public void wrapEntityInputStream(EntityInputStream stream) {
-        input = stream.getWrapped();
+    public void wrapExternalStream(ExternalStreamWrapper stream) {
+        input = new InputStreamWrapper() {
+            @Override
+            public InputStream getWrapped() {
+                return stream.getExternalStream();
+            }
+        };
         listener = stream.getListener();
     }
 }

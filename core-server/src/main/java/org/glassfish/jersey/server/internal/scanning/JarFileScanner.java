@@ -115,7 +115,7 @@ public final class JarFileScanner extends AbstractResourceFinderAdapter {
         return new InputStreamWrapper() {
 
             @Override
-            protected InputStream getWrapped() {
+            public InputStream getWrapped() {
                 return jarInputStream;
             }
 

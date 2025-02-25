@@ -45,6 +45,7 @@ import jakarta.ws.rs.ext.ReaderInterceptor;
 
 import javax.xml.transform.Source;
 
+import org.glassfish.jersey.innate.io.ExternalStreamWrapper;
 import org.glassfish.jersey.internal.LocalizationMessages;
 import org.glassfish.jersey.internal.PropertiesDelegate;
 import org.glassfish.jersey.internal.util.collection.GuardianStringKeyMultivaluedMap;
@@ -584,8 +585,8 @@ public abstract class InboundMessageContext extends MessageHeaderMethods {
      *
      * @param stream the whole input stream entity
      */
-    public void wrapEntityInputStream(EntityInputStream stream) {
-        this.entityContent.wrapEntityInputStream(stream);
+    public void wrapEntityInputStream(ExternalStreamWrapper stream) {
+        this.entityContent.wrapExternalStream(stream);
         this.entityContent.buffered = false;
     }
 

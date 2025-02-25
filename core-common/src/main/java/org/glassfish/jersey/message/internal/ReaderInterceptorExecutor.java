@@ -263,7 +263,7 @@ public final class ReaderInterceptorExecutor extends InterceptorExecutor<ReaderI
         }
 
         @Override
-        protected InputStream getWrapped() {
+        public InputStream getWrapped() {
             return original;
         }
 

@@ -902,7 +902,7 @@ class ApacheConnector implements Connector {
         }
 
         @Override
-        protected InputStream getWrapped() {
+        public InputStream getWrapped() {
             return in;
         }
 
