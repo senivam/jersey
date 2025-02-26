@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2024 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2025 Oracle and/or its affiliates. All rights reserved.
  *
  * This program and the accompanying materials are made available under the
  * terms of the Eclipse Public License v. 2.0, which is available at
@@ -58,7 +58,7 @@ public class ResponseReadAndBufferEntityTest extends JerseyTest {
 
     private static final Logger LOGGER = Logger.getLogger(ResponseReadAndBufferEntityTest.class.getName());
 
-    public static class CorruptableInputStream extends InputStreamWrapper {
+    public static class CorruptableInputStream extends InputStream {
 
         private final AtomicInteger closeCounter = new AtomicInteger(0);
 
@@ -72,16 +72,53 @@ public class ResponseReadAndBufferEntityTest extends JerseyTest {
         }
 
         @Override
-        protected InputStream getWrapped() {
-            return delegate;
-        }
-
-        @Override
-        protected InputStream getWrappedIOE() throws IOException {
+        public synchronized int read() throws IOException {
             if (corruptRead) {
                 corrupt();
             }
-            return delegate;
+            return delegate.read();
+        }
+
+        @Override
+        public int read(final byte[] b) throws IOException {
+            if (corruptRead) {
+                corrupt();
+            }
+            return delegate.read(b);
+        }
+
+        @Override
+        public int read(final byte[] b, final int off, final int len) throws IOException {
+            if (corruptRead) {
+                corrupt();
+            }
+            return delegate.read(b, off, len);
+        }
+
+        @Override
+        public long skip(final long n) throws IOException {
+            if (corruptRead) {
+                corrupt();
+            }
+            return delegate.skip(n);
+        }
+
+        @Override
+        public int available() throws IOException {
+            if (corruptRead) {
+                corrupt();
+            }
+            return delegate.available();
+        }
+
+        @Override
+        public boolean markSupported() {
+            return delegate.markSupported();
+        }
+
+        @Override
+        public void mark(final int readAheadLimit) {
+            delegate.mark(readAheadLimit);
         }
 
         @Override

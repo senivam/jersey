@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2024 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2025 Oracle and/or its affiliates. All rights reserved.
  *
  * This program and the accompanying materials are made available under the
  * terms of the Eclipse Public License v. 2.0, which is available at
@@ -45,6 +45,7 @@ import jakarta.ws.rs.ext.ReaderInterceptor;
 
 import javax.xml.transform.Source;
 
+import org.glassfish.jersey.innate.io.ExternalStreamWrapper;
 import org.glassfish.jersey.internal.LocalizationMessages;
 import org.glassfish.jersey.internal.PropertiesDelegate;
 import org.glassfish.jersey.internal.util.collection.GuardianStringKeyMultivaluedMap;
@@ -577,6 +578,16 @@ public abstract class InboundMessageContext extends MessageHeaderMethods {
      */
     public void setEntityStream(InputStream input) {
         this.entityContent.setContent(input, false);
+    }
+
+    /**
+     * Provides the whole {@link EntityInputStream} to the request
+     *
+     * @param stream the whole input stream entity
+     */
+    public void wrapEntityInputStream(ExternalStreamWrapper stream) {
+        this.entityContent.wrapExternalStream(stream);
+        this.entityContent.buffered = false;
     }
 
     /**
