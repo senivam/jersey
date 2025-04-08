@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, 2025 Oracle and/or its affiliates. All rights reserved.
  *
  * This program and the accompanying materials are made available under the
  * terms of the Eclipse Public License v. 2.0, which is available at
@@ -19,6 +19,7 @@ package org.glassfish.jersey.netty.connector;
 import io.netty.handler.codec.http.HttpHeaderNames;
 import io.netty.handler.codec.http.HttpHeaderValues;
 import io.netty.handler.codec.http.HttpRequest;
+import io.netty.handler.codec.http.HttpUtil;
 import io.netty.handler.codec.http.HttpVersion;
 import org.glassfish.jersey.client.ClientProperties;
 import org.glassfish.jersey.client.ClientRequest;
@@ -53,7 +54,9 @@ class Expect100ContinueConnectorExtension
                 || !allowStreaming) {
             return;
         }
-        extensionParam.headers().add(HttpHeaderNames.EXPECT, HttpHeaderValues.CONTINUE);
+        if (!HttpUtil.is100ContinueExpected(extensionParam)) {
+            HttpUtil.set100ContinueExpected(extensionParam, true);
+        }
 
     }
 

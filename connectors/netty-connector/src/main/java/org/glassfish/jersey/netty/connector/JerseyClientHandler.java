@@ -108,6 +108,7 @@ class JerseyClientHandler extends SimpleChannelInboundHandler<HttpObject> {
           ClientResponse cr = jerseyResponse;
           jerseyResponse = null;
           int responseStatus = cr.getStatus();
+          System.out.println("RESPONSE STATUS: " + responseStatus);
           if (followRedirects
                   && (responseStatus == ResponseStatus.Redirect3xx.MOVED_PERMANENTLY_301.getStatusCode()
                           || responseStatus == ResponseStatus.Redirect3xx.FOUND_302.getStatusCode()

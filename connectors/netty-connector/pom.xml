@@ -41,6 +41,11 @@
             <groupId>io.netty</groupId>
             <artifactId>netty-all</artifactId>
         </dependency>
+        <dependency>
+            <groupId>io.netty</groupId>
+            <artifactId>netty-handler</artifactId>
+            <version>${netty.version}</version>
+        </dependency>
 
         <dependency>
             <!-- cannot be netty, since netty container depends on netty connector. -->

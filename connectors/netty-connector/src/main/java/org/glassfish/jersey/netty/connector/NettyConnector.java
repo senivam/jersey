@@ -17,9 +17,7 @@
 package org.glassfish.jersey.netty.connector;
 
 import java.io.IOException;
-import java.io.InterruptedIOException;
 import java.io.OutputStream;
-import java.io.OutputStreamWriter;
 import java.net.InetSocketAddress;
 import java.net.SocketAddress;
 import java.net.URI;
@@ -34,6 +32,8 @@ import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionException;
 import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.Exchanger;
+import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
@@ -69,6 +69,8 @@ import io.netty.handler.codec.http.HttpRequest;
 import io.netty.handler.codec.http.HttpUtil;
 import io.netty.handler.codec.http.HttpVersion;
 import io.netty.handler.codec.http.LastHttpContent;
+import io.netty.handler.logging.LogLevel;
+import io.netty.handler.logging.LoggingHandler;
 import io.netty.handler.proxy.HttpProxyHandler;
 import io.netty.handler.proxy.ProxyHandler;
 import io.netty.handler.ssl.ApplicationProtocolConfig;
@@ -256,8 +258,6 @@ class NettyConnector implements Connector {
                }
             }
 
-            final JerseyExpectContinueHandler expect100ContinueHandler = new JerseyExpectContinueHandler();
-
             if (chan == null) {
                Integer connectTimeout = jerseyRequest.resolveProperty(ClientProperties.CONNECT_TIMEOUT, 0);
                Bootstrap b = new Bootstrap();
@@ -331,9 +331,9 @@ class NettyConnector implements Connector {
                                 NettyClientProperties.MAX_INITIAL_LINE_LENGTH,
                                 NettyClientProperties.DEFAULT_INITIAL_LINE_LENGTH);
                      p.addLast(new HttpClientCodec(maxInitialLineLength, maxHeaderSize, maxChunkSize));
-                     p.addLast(EXPECT_100_CONTINUE_HANDLER, expect100ContinueHandler);
                      p.addLast(new ChunkedWriteHandler());
                      p.addLast(new HttpContentDecompressor());
+                     p.addLast(new LoggingHandler(LogLevel.DEBUG));
                     }
                 });
 
@@ -497,33 +497,15 @@ class NettyConnector implements Connector {
                 new Expect100ContinueConnectorExtension().invoke(jerseyRequest, nettyRequest);
 
                 boolean continueExpected = HttpUtil.is100ContinueExpected(nettyRequest);
-                boolean expectationsFailed  = false;
 
                 if (continueExpected) {
-                    final CountDownLatch expect100ContinueLatch = new CountDownLatch(1);
-                    expect100ContinueHandler.attachCountDownLatch(expect100ContinueLatch);
-                    //send expect request, sync and wait till either response or timeout received
-                    entityWriter.writeAndFlush(nettyRequest);
-                    expect100ContinueLatch.await(expect100ContinueTimeout, TimeUnit.MILLISECONDS);
-                    try {
-                        expect100ContinueHandler.processExpectationStatus();
-                    } catch (TimeoutException e) {
-                        //Expect:100-continue allows timeouts by the spec
-                        //so, send request directly without Expect header.
-                        expectationsFailed = true;
-                    } finally {
-                        //restore request and handler to the original state.
-                        HttpUtil.set100ContinueExpected(nettyRequest, false);
-                        expect100ContinueHandler.resetHandler();
-                    }
+                    final CompletableFuture<ExchangePair<Boolean, Exception>> exchanger = new CompletableFuture<>();
+                    final JerseyExpectContinueHandler expect100ContinueHandler = new JerseyExpectContinueHandler(exchanger);
+                    ch.pipeline().addBefore(REQUEST_HANDLER,
+                            EXPECT_100_CONTINUE_HANDLER, expect100ContinueHandler);
                 }
+                entityWriter.writeAndFlush(nettyRequest);
 
-                if (!continueExpected || expectationsFailed) {
-                    if (expectationsFailed) {
-                        ch.pipeline().writeAndFlush(LastHttpContent.EMPTY_LAST_CONTENT).sync();
-                    }
-                    entityWriter.writeAndFlush(nettyRequest);
-                }
                 if (HttpUtil.isTransferEncodingChunked(nettyRequest)) {
                     entityWriter.write(new HttpChunkedInput(entityWriter.getChunkedInput()));
                 } else {
@@ -603,6 +585,44 @@ class NettyConnector implements Connector {
        }
     }
 
+    protected static class ExchangePair<V, K extends Throwable> {
+        private V status;
+        private K exception;
+
+        public ExchangePair(V status, K exception) {
+            this.status = status;
+            this.exception = exception;
+        }
+
+        public V getStatus() {
+            return status;
+        }
+
+        public K getException() {
+            return exception;
+        }
+
+        void processExpect100ContinueException() throws TimeoutException, IOException {
+            if (exception instanceof IOException) {
+                throw (IOException) exception;
+            }
+            if (exception instanceof ProcessingException) {
+                throw (ProcessingException) exception;
+            }
+            if (exception instanceof TimeoutException) {
+                throw (TimeoutException) exception;
+            }
+        }
+
+        @Override
+        public String toString() {
+            return "ExchangePair{"
+                    + "status=" + status
+                    + ", exception=" + exception
+                    + '}';
+        }
+    }
+
     private static ProxyHandler createProxyHandler(ClientRequest jerseyRequest, SocketAddress proxyAddr,
                                                    String userName, String password, long connectTimeout) {
         final Boolean filter = jerseyRequest.resolveProperty(NettyClientProperties.FILTER_HEADERS_FOR_PROXY, Boolean.TRUE);
@@ -646,7 +666,7 @@ class NettyConnector implements Connector {
         if (!nettyRequest.headers().contains(HttpHeaderNames.HOST)) {
             int requestPort = jerseyRequest.getUri().getPort();
             final String hostHeader;
-            if (requestPort != 80 && requestPort != 443) {
+            if (requestPort != -1 && requestPort != 80 && requestPort != 443) {
                 hostHeader = jerseyRequest.getUri().getHost() + ":" + requestPort;
             } else {
                 hostHeader = jerseyRequest.getUri().getHost();
