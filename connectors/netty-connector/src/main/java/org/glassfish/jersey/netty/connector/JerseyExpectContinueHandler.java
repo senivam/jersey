@@ -16,36 +16,22 @@
 
 package org.glassfish.jersey.netty.connector;
 
-import io.netty.channel.ChannelDuplexHandler;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.ChannelInboundHandlerAdapter;
-import io.netty.channel.ChannelPromise;
 import io.netty.handler.codec.http.FullHttpMessage;
-import io.netty.handler.codec.http.HttpChunkedInput;
-import io.netty.handler.codec.http.HttpContent;
-import io.netty.handler.codec.http.HttpHeaderNames;
-import io.netty.handler.codec.http.HttpHeaderValues;
-import io.netty.handler.codec.http.HttpRequest;
 import io.netty.handler.codec.http.HttpResponse;
 import io.netty.handler.codec.http.HttpResponseStatus;
-import io.netty.handler.codec.http.HttpUtil;
 import io.netty.handler.codec.http.LastHttpContent;
-import io.netty.handler.stream.ChunkedInput;
-import io.netty.util.AttributeKey;
-import io.netty.util.concurrent.Promise;
 
 import javax.ws.rs.ProcessingException;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
-import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.Exchanger;
-import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 
-public class JerseyExpectContinueHandler extends ChannelDuplexHandler {
+public class JerseyExpectContinueHandler extends ChannelInboundHandlerAdapter {
 
     private ExpectationState currentState = ExpectationState.IDLE;
 
@@ -66,135 +52,14 @@ public class JerseyExpectContinueHandler extends ChannelDuplexHandler {
 
     private HttpResponseStatus status = null;
 
-    private CompletableFuture<NettyConnector.ExchangePair<Boolean, Exception>> exchanger;
-
-    private HttpRequest originalNettyRequest;
-    private HttpContent originalContent;
-    private ChunkedInput originalChunkedContent;
-
-    private Promise continuePromise;
+    private CountDownLatch latch = null;
 
     private boolean propagateLastMessage = false;
 
-    public JerseyExpectContinueHandler(CompletableFuture<NettyConnector.ExchangePair<Boolean, Exception>> exchanger) {
-        this.exchanger = exchanger;
-    }
-
-    @Override
-    public void write(ChannelHandlerContext ctx, Object msg, ChannelPromise promise) throws Exception {
-        System.out.println("WRITING MESSAGE TO CHANNEL: " + msg);
-        System.out.println("INSTANCE OF: " + (msg instanceof ChunkedInput));
-        if (msg instanceof HttpRequest) {
-            HttpRequest request = (HttpRequest) msg;
-
-            if (HttpUtil.is100ContinueExpected(request)) {
-                originalNettyRequest = request;
-                currentState = ExpectationState.SENT;
-                // Write request headers only, content will be sent later
-                super.write(ctx, request, promise);
-                return;
-            }
-        }
-        if ((msg instanceof ChunkedInput || msg instanceof HttpContent)
-                && (originalContent == null || originalChunkedContent == null)) {
-            // Store the content to be sent after receiving 100 Continue
-            if (currentState == ExpectationState.SENT || currentState == ExpectationState.AWAITING) {
-
-                if (msg instanceof HttpContent) {
-                    originalContent = (HttpContent) msg;
-                }
-                if (msg instanceof ChunkedInput) {
-                    originalChunkedContent = (HttpChunkedInput) msg;
-                }
-                continuePromise = ctx.executor().newPromise();
-
-                // Create timeout for 100-continue wait
-                ctx.executor().schedule(() -> {
-                    if (!continuePromise.isDone()) {
-                        // Server didn't respond with 100 Continue in time
-                        // Send the content anyway according to HTTP specs
-                        sendPendingContent(ctx);
-                    }
-                }, 500, TimeUnit.SECONDS);
-
-                return;
-            }
-        }
-
-        super.write(ctx, msg, promise);
-    }
-
-    private void sendPendingContent(ChannelHandlerContext ctx) {
-        System.out.println("SENDING ORIGINAL CONTENT: " + originalContent);
-        System.out.println("SENDING ORIGINAL CHUNKED CONTENT: " + originalChunkedContent);
-
-        if (originalContent != null || originalChunkedContent != null) {
-            if (originalContent != null) {
-                ctx.writeAndFlush(originalContent);
-                originalContent = null;
-            }
-            if (originalChunkedContent != null) {
-                ctx.writeAndFlush(originalChunkedContent);
-                originalChunkedContent = null;
-            }
-
-            if (continuePromise != null) {
-                continuePromise.setSuccess(null);
-            }
-        }
-    }
-
-/*
-
-    private Promise<Void> continuePromise;
-    private HttpContent pendingContent;
-
-    @Override
-    public void write(ChannelHandlerContext ctx, Object msg, ChannelPromise promise) throws Exception {
-        if (msg instanceof HttpRequest) {
-            HttpRequest request = (HttpRequest) msg;
-
-            if (HttpUtil.is100ContinueExpected(request)) {
-
-                // Write request headers only, content will be sent later
-                super.write(ctx, request, promise);
-                return;
-            }
-        } else if (msg instanceof HttpContent && pendingContent == null) {
-            // Store the content to be sent after receiving 100 Continue
-            HttpRequest request = (HttpRequest) ctx.channel().attr(AttributeKey.valueOf("REQUEST")).get();
-            if (request != null && HttpHeaderValues.CONTINUE.contentEqualsIgnoreCase(
-                    request.headers().get(HttpHeaderNames.EXPECT))) {
-
-                pendingContent = (HttpContent) msg;
-                continuePromise = ctx.executor().newPromise();
-
-                // Create timeout for 100-continue wait
-                ctx.executor().schedule(() -> {
-                    if (!continuePromise.isDone()) {
-                        // Server didn't respond with 100 Continue in time
-                        // Send the content anyway according to HTTP specs
-                        sendPendingContent(ctx);
-                    }
-                }, 5, TimeUnit.SECONDS);
-
-                return;
-            }
-        }
-
-
-        // For any other messages, pass them through
-        super.write(ctx, msg, promise);
-    }
-
-
-
-*/
-
     @Override
     public void channelRead(ChannelHandlerContext ctx, Object msg) throws Exception {
-        System.out.println("READING MESSAGE: " + msg);
-        if (checkExpectResponse(msg)) {
+
+        if (checkExpectResponse(msg)/* || checkInvalidExpect(msg)*/) {
             currentState = ExpectationState.AWAITING;
         }
         switch (currentState) {
@@ -204,14 +69,7 @@ public class JerseyExpectContinueHandler extends ChannelDuplexHandler {
 
                 boolean handshakeDone = processErrorStatuses(status) || msg instanceof FullHttpMessage;
                 currentState = (handshakeDone) ? ExpectationState.IDLE : ExpectationState.FINISHING;
-                if (status == HttpResponseStatus.CONTINUE) {
-                    System.out.println("YES, WE ARE CONTINUING");
-                    sendPendingContent(ctx);
-                }
-                ctx.executor().schedule(() -> {
-                            processExpectationStatus();
-                        }, 500, TimeUnit.MILLISECONDS
-                );
+                processLatch();
                 return;
             case FINISHING:
                 if (msg instanceof LastHttpContent) {
@@ -229,50 +87,103 @@ public class JerseyExpectContinueHandler extends ChannelDuplexHandler {
     }
 
     private boolean checkExpectResponse(Object msg) {
-        if (currentState == ExpectationState.SENT && msg instanceof HttpResponse) {
+        if (currentState == ExpectationState.IDLE && latch != null && msg instanceof HttpResponse) {
             return statusesToBeConsidered.contains(((HttpResponse) msg).status());
         }
         return false;
     }
 
-    private boolean processErrorStatuses(HttpResponseStatus status)
-            throws InterruptedException {
+    private boolean checkInvalidExpect(Object msg) {
+        return (ExpectationState.IDLE.equals(currentState)
+                && msg instanceof HttpResponse
+                && HttpResponseStatus.CONTINUE.equals(((HttpResponse) msg).status())
+        );
+    }
+
+    boolean processErrorStatuses(HttpResponseStatus status) {
         if (reSendErrorStatuses.contains(status)) {
             propagateLastMessage = true;
         }
-        return (finalErrorStatuses.contains(status));
+        return (errorStatuses.contains(status));
     }
 
-    private void processExpectationStatus()  {
-            if (status == null) {
-                exchanger.completeExceptionally(new TimeoutException());
-                // continue without expectations
-            }
-            if (!statusesToBeConsidered.contains(status)) {
-                exchanger.completeExceptionally(new ProcessingException(LocalizationMessages
-                        .UNEXPECTED_VALUE_FOR_EXPECT_100_CONTINUE_STATUSES(status.code()), null));
-            }
+    void processExpectationStatus()
+            throws TimeoutException, IOException {
+        if (status == null) {
+            throw new TimeoutException(); // continue without expectations
+        }
+        if (!statusesToBeConsidered.contains(status)) {
+            throw new ProcessingException(LocalizationMessages
+                    .UNEXPECTED_VALUE_FOR_EXPECT_100_CONTINUE_STATUSES(status.code()), null);
+        }
 
-            if (finalErrorStatuses.contains(status)) {
-                exchanger.completeExceptionally(new IOException(LocalizationMessages
-                        .EXPECT_100_CONTINUE_FAILED_REQUEST_FAILED()));
-            }
+        if (finalErrorStatuses.contains(status)) {
+            throw new IOException(LocalizationMessages
+                    .EXPECT_100_CONTINUE_FAILED_REQUEST_FAILED(), null);
+        }
 
-            if (reSendErrorStatuses.contains(status)) {
-                exchanger.completeExceptionally(new TimeoutException(LocalizationMessages
-                        .EXPECT_100_CONTINUE_FAILED_REQUEST_SHOULD_BE_RESENT()));
-                // Re-send request without expectations
-            }
+        if (reSendErrorStatuses.contains(status)) {
+            throw new TimeoutException(LocalizationMessages
+                    .EXPECT_100_CONTINUE_FAILED_REQUEST_SHOULD_BE_RESENT()); // Re-send request without expectations
+        }
+    }
 
-            exchanger.complete(new NettyConnector.ExchangePair<>(true, null));
+    void resetHandler() {
+        latch = null;
+    }
 
+    void attachCountDownLatch(CountDownLatch latch) {
+        this.latch = latch;
+    }
+
+    private void processLatch() {
+        if (latch != null) {
+            latch.countDown();
+        }
     }
 
     private enum ExpectationState {
-
-        SENT,
         AWAITING,
         FINISHING,
         IDLE
     }
+
+    protected static class ExchangePair<K extends Throwable> {
+        private final Boolean status;
+        private final K exception;
+
+        public ExchangePair(Boolean status, K exception) {
+            this.status = status;
+            this.exception = exception;
+        }
+
+        public Boolean getStatus() {
+            return status;
+        }
+
+        public K getException() {
+            return exception;
+        }
+
+        void processExpect100ContinueException() throws TimeoutException, IOException {
+            if (exception instanceof IOException) {
+                throw (IOException) exception;
+            }
+            if (exception instanceof ProcessingException) {
+                throw (ProcessingException) exception;
+            }
+            if (exception instanceof TimeoutException) {
+                throw (TimeoutException) exception;
+            }
+        }
+
+        @Override
+        public String toString() {
+            return "ExchangePair{"
+                    + "status=" + status
+                    + ", exception=" + exception
+                    + '}';
+        }
+    }
+
 }

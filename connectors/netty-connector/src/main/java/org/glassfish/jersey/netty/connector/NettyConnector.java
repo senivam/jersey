@@ -258,6 +258,8 @@ class NettyConnector implements Connector {
                }
             }
 
+            final JerseyExpectContinueHandler expect100ContinueHandler = new JerseyExpectContinueHandler();
+
             if (chan == null) {
                Integer connectTimeout = jerseyRequest.resolveProperty(ClientProperties.CONNECT_TIMEOUT, 0);
                Bootstrap b = new Bootstrap();
@@ -331,6 +333,7 @@ class NettyConnector implements Connector {
                                 NettyClientProperties.MAX_INITIAL_LINE_LENGTH,
                                 NettyClientProperties.DEFAULT_INITIAL_LINE_LENGTH);
                      p.addLast(new HttpClientCodec(maxInitialLineLength, maxHeaderSize, maxChunkSize));
+                     p.addLast(EXPECT_100_CONTINUE_HANDLER, expect100ContinueHandler);
                      p.addLast(new ChunkedWriteHandler());
                      p.addLast(new HttpContentDecompressor());
                      p.addLast(new LoggingHandler(LogLevel.DEBUG));
@@ -497,15 +500,33 @@ class NettyConnector implements Connector {
                 new Expect100ContinueConnectorExtension().invoke(jerseyRequest, nettyRequest);
 
                 boolean continueExpected = HttpUtil.is100ContinueExpected(nettyRequest);
+                boolean expectationsFailed  = false;
 
                 if (continueExpected) {
-                    final CompletableFuture<ExchangePair<Boolean, Exception>> exchanger = new CompletableFuture<>();
-                    final JerseyExpectContinueHandler expect100ContinueHandler = new JerseyExpectContinueHandler(exchanger);
-                    ch.pipeline().addBefore(REQUEST_HANDLER,
-                            EXPECT_100_CONTINUE_HANDLER, expect100ContinueHandler);
+                    final CountDownLatch expect100ContinueLatch = new CountDownLatch(1);
+                    expect100ContinueHandler.attachCountDownLatch(expect100ContinueLatch);
+                    //send expect request, sync and wait till either response or timeout received
+                    entityWriter.writeAndFlush(nettyRequest);
+                    expect100ContinueLatch.await(expect100ContinueTimeout, TimeUnit.MILLISECONDS);
+                    try {
+                        expect100ContinueHandler.processExpectationStatus();
+                    } catch (TimeoutException e) {
+                        //Expect:100-continue allows timeouts by the spec
+                        //so, send request directly without Expect header.
+                        expectationsFailed = true;
+                    } finally {
+                        //restore request and handler to the original state.
+                        HttpUtil.set100ContinueExpected(nettyRequest, false);
+                        expect100ContinueHandler.resetHandler();
+                    }
                 }
-                entityWriter.writeAndFlush(nettyRequest);
 
+                if (!continueExpected || expectationsFailed) {
+                    if (expectationsFailed) {
+                        ch.pipeline().writeAndFlush(LastHttpContent.EMPTY_LAST_CONTENT).sync();
+                    }
+                    entityWriter.writeAndFlush(nettyRequest);
+                }
                 if (HttpUtil.isTransferEncodingChunked(nettyRequest)) {
                     entityWriter.write(new HttpChunkedInput(entityWriter.getChunkedInput()));
                 } else {
@@ -583,44 +604,6 @@ class NettyConnector implements Connector {
               super.userEventTriggered(ctx, evt);
           }
        }
-    }
-
-    protected static class ExchangePair<V, K extends Throwable> {
-        private V status;
-        private K exception;
-
-        public ExchangePair(V status, K exception) {
-            this.status = status;
-            this.exception = exception;
-        }
-
-        public V getStatus() {
-            return status;
-        }
-
-        public K getException() {
-            return exception;
-        }
-
-        void processExpect100ContinueException() throws TimeoutException, IOException {
-            if (exception instanceof IOException) {
-                throw (IOException) exception;
-            }
-            if (exception instanceof ProcessingException) {
-                throw (ProcessingException) exception;
-            }
-            if (exception instanceof TimeoutException) {
-                throw (TimeoutException) exception;
-            }
-        }
-
-        @Override
-        public String toString() {
-            return "ExchangePair{"
-                    + "status=" + status
-                    + ", exception=" + exception
-                    + '}';
-        }
     }
 
     private static ProxyHandler createProxyHandler(ClientRequest jerseyRequest, SocketAddress proxyAddr,
