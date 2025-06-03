@@ -143,7 +143,7 @@ class JerseyClientHandler extends SimpleChannelInboundHandler<HttpObject> {
                       } else {
                           ClientRequest newReq = new ClientRequest(jerseyRequest);
                           newReq.setUri(newUri);
-                          ctx.close();
+                          //ctx.close();
                           if (redirectController.prepareRedirect(newReq, cr)) {
                               final NettyConnector newConnector = new NettyConnector(newReq.getClient());
                               newConnector.execute(newReq, redirectUriHistory, new CompletableFuture<ClientResponse>() {

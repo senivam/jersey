@@ -67,6 +67,8 @@ import io.netty.handler.codec.http.HttpRequest;
 import io.netty.handler.codec.http.HttpUtil;
 import io.netty.handler.codec.http.HttpVersion;
 import io.netty.handler.codec.http.LastHttpContent;
+import io.netty.handler.logging.LogLevel;
+import io.netty.handler.logging.LoggingHandler;
 import io.netty.handler.proxy.HttpProxyHandler;
 import io.netty.handler.proxy.ProxyHandler;
 import io.netty.handler.ssl.ApplicationProtocolConfig;
@@ -332,6 +334,7 @@ class NettyConnector implements Connector {
                      p.addLast(EXPECT_100_CONTINUE_HANDLER, expect100ContinueHandler);
                      p.addLast(new ChunkedWriteHandler());
                      p.addLast(new HttpContentDecompressor());
+                     p.addLast(new LoggingHandler(LogLevel.TRACE));
                     }
                 });
 
